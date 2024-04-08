@@ -13,40 +13,32 @@ export function validateMsg(message: string): void {
   validateField<JSON.Float>(data!, "sensor_reading");
 }
 
-export function getStringField(jsonObj: JSON.Obj, fieldName: string): string | null {
-  try {
-    validateField<JSON.Str>(jsonObj, fieldName);
-    const field = getField<JSON.Str>(jsonObj, fieldName);
-    return field ? field.valueOf() : null;
-  } catch (error) {
-    console.error(`Error fetching string field '${fieldName}': ${error}`);
-    return null;
-  }
+export function getStringField(jsonObj: JSON.Obj, fieldName: string): string {
+  const field = getField<JSON.Str>(jsonObj, fieldName);
+  return field ? field.valueOf() : "";
 }
 
-export function getFloatField(jsonObj: JSON.Obj, fieldName: string): number | null {
-  try {
-    validateField<JSON.Num>(jsonObj, fieldName);
-    const field = jsonObj.get(fieldName);
-    if (field instanceof JSON.Num) {
-      return field.valueOf() as number;
-    }
-  } catch (error) {
-    console.error(`Error validating or fetching float field '${fieldName}': ${error}`);
+
+export function getFloatField(jsonObj: JSON.Obj, fieldName: string): f64 {
+  const field = jsonObj.get(fieldName);
+  if (field && field.isNum) {
+    // Convert the numeric JSON value to string and then parse it
+    let numStr = field.toString();
+    return f64.parse(numStr);
   }
-  return null;
+  return -1.0; // Sentinel value for errors
 }
 
-export function getIntField(jsonObj: JSON.Obj, fieldName: string): number | null {
-  try {
-    validateField<JSON.Num>(jsonObj, fieldName);
-
-    const field = jsonObj.get(fieldName);
-    if (field instanceof JSON.Num) {
-      return Math.floor(field.valueOf() as number);
-    }
-  } catch (error) {
-    console.error(`Error validating or fetching int field '${fieldName}': ${error}`);
+export function getInt64Field(jsonObj: JSON.Obj, fieldName: string): i64 {
+  const field = jsonObj.get(fieldName);
+  if (field && field.isNum) {
+    // Assuming the number is represented as a string to handle large values
+    let numStr = field.toString();
+    return i64.parse(numStr, 10);
+  } else if (field && field.isString) {
+    // If the field is intentionally stored as a string to preserve precision
+    let str = (field as JSON.Str).valueOf();
+    return i64.parse(str, 10);
   }
-  return null;
+  return -1; // Sentinel value for errors or not found
 }

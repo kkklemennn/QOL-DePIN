@@ -3,7 +3,7 @@ import { String, Bool } from "@w3bstream/wasm-sdk/assembly/sql";
 
 export { alloc } from "@w3bstream/wasm-sdk";
 
-import { validateMsg, getStringField, getFloatField, getIntField } from "./helpers";
+import { validateMsg, getStringField, getFloatField, getInt64Field } from "./helpers";
 
 export function start(rid: i32): i32 {
   Log("Hello World!");
@@ -126,7 +126,7 @@ export function handle_data(rid: i32): i32 {
   // let owner = get_device_owner(message_json);
   // assert(owner != CONST.ZERO_ADDRESS,"No owner assigned for device");
   // Store the IoT data along with the device id 
-  // storeData(message_json);
+  storeData(message_json);
 
   // For simplicity, let's evaluate rewards here (however, a dedicated
   // message should be sent periodically!)
@@ -251,22 +251,24 @@ function validateData(message_json: JSON.Obj): boolean {
 //   return true;
 // }
 
-// function storeData(message_json: JSON.Obj): i32 { 
-//   log("Storing data message in DB")
-//   // Get the device public key
-//   let public_key = getStringField(message_json, "public_key");
-//   // Get the device data
-//   let data_json = message_json.get("data") as JSON.Obj;
-//   // Get the sensor reading
-//   let sensor_reading = getFloatField(data_json, "sensor_reading");
-//   // Get the timestamp
-//   let timestamp = getIntField(data_json, "timestamp");
-//   // Store the data in the W3bstream SQL Database
-//   const query = `INSERT INTO "data_table" (public_key,sensor_reading,timestamp) VALUES (?,?,?);`;
-//   const value = ExecSQL(
-//       query, 
-//       [new String(public_key), new String(sensor_reading), new String(timestamp)]);
-//   log("Query returned: " + value.toString());
+function storeData(message_json: JSON.Obj): i32 { 
+  Log("Storing data message in DB64")
+  // Get the device public key
+  let public_key = getStringField(message_json, "public_key");
+  // Get the device data
+  let data_json = message_json.get("data") as JSON.Obj;
+  // Get the sensor reading
+  let sensor_reading = getFloatField(data_json, "sensor_reading");
+  const sensor_reading_str: string = sensor_reading.toString(); // Convert f64 to string
+  // Get the timestamp
+  let timestamp: i64 = getInt64Field(data_json, "timestamp");
+  const timestampStr: string = timestamp.toString(); // Convert i64 to string
+  // Store the data in the W3bstream SQL Database
+  const query = `INSERT INTO "data_table" (public_key,sensor_reading,timestamp) VALUES (?,?,?);`;
+  const value = ExecSQL(
+      query, 
+      [new String(public_key), new String(sensor_reading_str), new String(timestampStr)]);
+  Log("Query returned: " + value.toString());
 
-//   return value;
-// }
+  return value;
+}

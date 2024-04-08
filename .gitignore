@@ -8,3 +8,4 @@ blockchain/.env
 simulator/node_modules
 simulator/.env
 simulator/private.key
+pysim/.env
