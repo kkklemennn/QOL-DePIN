@@ -1,0 +1,10 @@
+applet/node_modules
+applet/build
+blockchain/artifacts
+blockchain/cache
+blockchain/deployments
+blockchain/node_modules
+blockchain/.env
+simulator/node_modules
+simulator/.env
+simulator/private.key
