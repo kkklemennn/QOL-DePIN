@@ -123,8 +123,8 @@ export function handle_data(rid: i32): i32 {
   // Verify device signature
   // assert(validateDeviceIdentity(message_json),"Device identity validation failed");
   // make sure the device has an owner assigned
-  // let owner = get_device_owner(message_json);
-  // assert(owner != CONST.ZERO_ADDRESS,"No owner assigned for device");
+  let owner = get_device_owner(message_json);
+  assert(owner != "0x0000000000000000000000000000000000000000","No owner assigned for device");
   // Store the IoT data along with the device id 
   storeData(message_json);
 
@@ -148,6 +148,22 @@ function validateData(message_json: JSON.Obj): boolean {
 
   return valid as boolean;
 } 
+
+// Get the owner of a specific device id from te w3bstream DB
+function get_device_owner(message_json: JSON.Obj): string {
+  let device_id = getStringField(message_json, "deviceId");
+  Log("Getting owner of device "+ device_id);
+  let sql = "SELECT owner_address FROM device_binding WHERE device_id = '" + device_id + "'";
+  let result = QuerySQL(sql);
+  if (result == "") {
+      Log("Device is not bound to any owner");
+      return "0x0000000000000000000000000000000000000000";
+  }
+  let result_json = JSON.parse(result) as JSON.Obj;
+  let owner = getStringField(result_json, "owner_address");
+  Log("Device owner is: " + owner)
+  return (owner);
+}
 
 // Simply rewards the most recent data message in the DB  
 // but more complex logic could be implemented here
@@ -205,24 +221,6 @@ function validateData(message_json: JSON.Obj): boolean {
 //   else if (is_active == "false") log("Device is banned");
 
 //   return (is_active == "true");
-// }
-
-// // Get the owner of a specific device id from te w3bstream DB
-// function get_device_owner(message_json: JSON.Obj): string {
-//   // Get the device id from the message
-//   let public_key = getStringField(message_json, "public_key");
-//   let device_id = publicKeyToDeviceId(public_key);
-//   log("Getting owner of device "+ device_id);
-//   let sql = "SELECT owner_address FROM device_bindings WHERE device_id = '" + device_id + "'";
-//   let result = QuerySQL(sql);
-//   if (result == "") {
-//       log("Device is not bound to any owner");
-//       return CONST.ZERO_ADDRESS;
-//   }
-//   let result_json = JSON.parse(result) as JSON.Obj;
-//   let owner = getStringField(result_json, "owner_address");
-//   log("Device owner is: " + owner)
-//   return (owner);
 // }
 
 // // Verify that the message signature is correct and the device public key is authorized
