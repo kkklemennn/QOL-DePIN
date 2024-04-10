@@ -261,13 +261,12 @@ function storeData(message_json: JSON.Obj): i32 {
   let sensor_reading = getFloatField(data_json, "sensor_reading");
   const sensor_reading_str: string = sensor_reading.toString(); // Convert f64 to string
   // Get the timestamp
-  let timestamp: i64 = getInt64Field(data_json, "timestamp");
-  const timestampStr: string = timestamp.toString(); // Convert i64 to string
+  let timestamp = getStringField(data_json, "timestamp");
   // Store the data in the W3bstream SQL Database
   const query = `INSERT INTO "data_table" (public_key,sensor_reading,timestamp) VALUES (?,?,?);`;
   const value = ExecSQL(
       query, 
-      [new String(public_key), new String(sensor_reading_str), new String(timestampStr)]);
+      [new String(public_key), new String(sensor_reading_str), new String(timestamp)]);
   Log("Query returned: " + value.toString());
 
   return value;
