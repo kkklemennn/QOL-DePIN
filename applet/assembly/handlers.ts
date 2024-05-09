@@ -1,5 +1,6 @@
-import { GetDataByRID, JSON, ExecSQL, Log, QuerySQL } from "@w3bstream/wasm-sdk";
+import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL } from "@w3bstream/wasm-sdk";
 import { String, Bool } from "@w3bstream/wasm-sdk/assembly/sql";
+import { buildTxData } from "./utils/build-tx";
 
 export { alloc } from "@w3bstream/wasm-sdk";
 
@@ -130,8 +131,8 @@ export function handle_data(rid: i32): i32 {
 
   // For simplicity, let's evaluate rewards here (however, a dedicated
   // message should be sent periodically!)
-  return 0
-  // return handle_process_rewards(rid);
+  // return 0
+  return handle_process_rewards(rid);
 }
 
 function validateData(message_json: JSON.Obj): boolean { 
@@ -167,42 +168,67 @@ function get_device_owner(message_json: JSON.Obj): string {
 
 // Simply rewards the most recent data message in the DB  
 // but more complex logic could be implemented here
-// export function handle_process_rewards(rid: i32): i32 {
-//   Log("Processing rewards");
+export function handle_process_rewards(rid: i32): i32 {
+  Log("Processing rewards");
 
-//   // Get the device data message from the W3bstream host
-//   let message_string = GetDataByRID(rid);
-//   // Parse the data message into a JSON object
-//   let message_json = JSON.parse(message_string) as JSON.Obj;
+  // Get the device data message from the W3bstream host
+  let message_string = GetDataByRID(rid);
+  // Parse the data message into a JSON object
+  let message_json = JSON.parse(message_string) as JSON.Obj;
 
-//   // Get the public key from the message
-//   let public_key = getStringField(message_json, "public_key");
-//   // Get the latest IoT data point sent by the device
-//   let sql = "SELECT public_key,sensor_reading FROM data_table WHERE public_key = '"+public_key+"' ORDER BY id DESC LIMIT 1";
-//   let result = QuerySQL(sql);
-//   let result_json = JSON.parse(result) as JSON.Obj;
-//   if (result_json == null) {
-//     log("No data found for device ")
-//     return 1;
-//   }
-//   // Get the power consumption
-//   let sensor_reading = parseFloat(getStringField(result_json, "sensor_reading"));  
-//   if (sensor_reading < 4.0) {
-//     // Rewards the device owner
-//     let owner = get_device_owner(message_json);
-//     log("Rewarding " + owner + " with 3 ECO Tokens...");
-//     let tx_hash = mintRewards(CONST.TOKEN_CONTRACT, owner, CONST.FOUR_TOKENS_HEX);
-//     if (tx_hash == "") {
-//         log("Sending token rewards failed.")
-//         return 1;
-//     }
-//     log("Reward transaction hash: " + tx_hash);
-//   } else {
-//     log("Power consumption too high, no rewards sent.");
-//   }
+  // Get the public key from the message
+  let public_key = getStringField(message_json, "public_key");
+  // Get the latest IoT data point sent by the device
+  let sql = "SELECT public_key,sensor_reading FROM data_table WHERE public_key = '"+public_key+"' ORDER BY id DESC LIMIT 1";
+  let result = QuerySQL(sql);
+  let result_json = JSON.parse(result) as JSON.Obj;
+  if (result_json == null) {
+    Log("No data found for device ")
+    return 1;
+  }
+  // Get the power consumption
+  let owner = get_device_owner(message_json);
+  Log("Rewarding " + owner + " with 4 Tokens...");
+  let tx_hash = mintRewards(owner, 4);
+  
+  if (tx_hash == "") {
+      Log("Sending token rewards failed.")
+      return 1;
+  }
 
-//   return 0;
-// }
+  return 0;
+}
+
+export function mintRewards(toAddress: string, amountToMint: u64): string {
+  const TOKEN_DECIMALS: u64 = 1000000000000000000;  // Equivalent to 10^18
+  const amountInWei: u64 = amountToMint * TOKEN_DECIMALS;
+
+  const MINT_FUNCTION_SIGNATURE = "40c10f19";  // keccak256 hash of the function signature "mint(address,uint256)"
+
+  const chainId = 4690;
+  const ERC20Address = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
+
+  // Build the transaction data
+  const txData = buildTxData(MINT_FUNCTION_SIGNATURE, toAddress, amountInWei.toString());
+
+  // Send the transaction
+  const txHash = SendTx(
+    chainId,
+    ERC20Address,
+    "0",  // Value in Wei to send with the transaction, "0" for token minting
+    txData
+  );
+
+  Log(txHash);
+
+  if (txHash == "") {
+    Log("Failed to mint rewards.");
+  } else {
+    Log("Rewards minted successfully. Transaction hash: " + txHash);
+  }
+  return txHash;
+}
+
 
 // // Verify that the device public key is authorized
 // function auth_device(message_json: JSON.Obj): bool {

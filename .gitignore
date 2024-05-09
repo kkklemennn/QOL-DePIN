@@ -1,5 +1,8 @@
 applet/node_modules
-applet/build
+applet/build/release.d.ts
+applet/build/release.js
+applet/build/release.wasm.map
+applet/build/release.wat
 blockchain/artifacts
 blockchain/cache
 blockchain/deployments

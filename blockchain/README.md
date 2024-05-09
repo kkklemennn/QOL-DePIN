@@ -41,6 +41,14 @@ npx hardhat register-device --deviceid <DEVICE_ID> --network testnet
 npx hardhat bind-device --deviceid <DEVICE_ID> --userid <USER_ADDRESS> --network testnet
 ```
 
+## IMPORTANT INFO
+To be able to mint tokens, we need to:
+- grant w3bstream operator address the minter role
+- fund the operator address with some IOTX
+
+To be able to see them in the metamask wallet, we need to:
+- import the token contract to metamask
+
 ## Event hashes:
 
 ### DeviceRegistered(bytes32): 
