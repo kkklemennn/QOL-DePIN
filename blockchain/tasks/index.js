@@ -11,3 +11,5 @@ require("./erc20checkMinters");
 require("./getDeviceOwner");
 require("./getOwnerDevices");
 require("./welcome");
+require("./checkTokenDecimals");
+require("./checkTokenBalance");

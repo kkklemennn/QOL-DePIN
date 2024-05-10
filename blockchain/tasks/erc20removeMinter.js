@@ -1,5 +1,5 @@
-task("add-erc20-minter", "Grant erc20 token minter role to an address")
-  .addParam("address", "Address to grant minter role to")
+task("remove-erc20-minter", "Revoke erc20 token minter role from an address")
+  .addParam("address", "Address to revoke minter role from")
   .setAction(async (taskArgs, hre) => {
     const { address } = taskArgs;
     const { deployments, ethers } = hre;

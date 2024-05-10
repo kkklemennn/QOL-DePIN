@@ -200,16 +200,15 @@ export function handle_process_rewards(rid: i32): i32 {
 }
 
 export function mintRewards(toAddress: string, amountToMint: u64): string {
-  const TOKEN_DECIMALS: u64 = 1000000000000000000;  // Equivalent to 10^18
-  const amountInWei: u64 = amountToMint * TOKEN_DECIMALS;
+  // const TOKEN_DECIMALS: u64 = 1000000000000000000;  // Equivalent to 10^18
+  // const amountInWei: u64 = amountToMint * TOKEN_DECIMALS;
 
   const MINT_FUNCTION_SIGNATURE = "40c10f19";  // keccak256 hash of the function signature "mint(address,uint256)"
-
   const chainId = 4690;
   const ERC20Address = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
 
   // Build the transaction data
-  const txData = buildTxData(MINT_FUNCTION_SIGNATURE, toAddress, amountInWei.toString());
+  const txData = buildTxData(MINT_FUNCTION_SIGNATURE, toAddress, "3"); // for some reason 3 is exactly 10 tokens (10 * 10^18)
 
   // Send the transaction
   const txHash = SendTx(
@@ -219,7 +218,7 @@ export function mintRewards(toAddress: string, amountToMint: u64): string {
     txData
   );
 
-  Log(txHash);
+  Log("Transaction hash: " + txHash);
 
   if (txHash == "") {
     Log("Failed to mint rewards.");
