@@ -122,7 +122,7 @@ export function handle_data(rid: i32): i32 {
   // validate fields
   assert(validateData(message_json), "Message fields are not valid");
   // Verify device signature
-  // assert(validateDeviceIdentity(message_json),"Device identity validation failed");
+  assert(validateDeviceIdentity(message_json),"Device identity validation failed");
   // make sure the device has an owner assigned
   let owner = get_device_owner(message_json);
   assert(owner != "0x0000000000000000000000000000000000000000","No owner assigned for device");
@@ -228,51 +228,80 @@ export function mintRewards(toAddress: string, amountToMint: u64): string {
   return txHash;
 }
 
+// Convert public key to device ID
+function publicKeyToDeviceId(public_key: string): string {
+  // Extract the first 64 characters of the public key and prefix with "0x"
+  return "0x" + public_key.slice(0, 64);
+}
 
 // // Verify that the device public key is authorized
-// function auth_device(message_json: JSON.Obj): bool {
-//   log("Authenticating device public key from DB...")
-//   // Get the public key from the message
-//   let public_key = getStringField(message_json, "public_key");
-//   // Get the device id from the message
-//   let device_id = publicKeyToDeviceId(public_key);
-//   let sql = "SELECT is_active FROM device_registry WHERE device_id = '" + device_id + "'";
-//   let result = QuerySQL(sql);
-//   assert(result != "", "Device is not registered");
+function auth_device(message_json: JSON.Obj): bool {
+  Log("Authenticating device public key from DB...");
+  
+  // Get the public key from the message
+  let public_key = getStringField(message_json, "public_key");
+  
+  // Get the device id from the message
+  let device_id = publicKeyToDeviceId(public_key);
+  
+  // Execute the SQL query to get the device status
+  let sql = "SELECT is_active FROM devices_registry WHERE device_id = '" + device_id + "'";
+  let result = QuerySQL(sql);
+  assert(result != "", "Device is not registered");
 
-//   let result_json = JSON.parse(result) as JSON.Obj;
-//   let is_active = getStringField(result_json, "is_active");
-//   if (is_active == "true") log("Device is authorized"); 
-//   else if (is_active == "false") log("Device is banned");
+  // Log the raw result for debugging
+  Log("Raw SQL query result: " + result);
 
-//   return (is_active == "true");
-// }
+  // Parse the result and ensure it's a JSON object
+  let parsed_result = JSON.parse(result);
+  assert(parsed_result.isObj, "Expected result to be a JSON object");
+  let result_json = parsed_result as JSON.Obj;
+  
+  // Get the is_active field
+  let is_active_value = result_json.get("is_active");
+  assert(is_active_value != null && is_active_value.isBool, "is_active field is missing or not a boolean in the query result");
+
+  // Convert is_active_value to Bool and then get its value
+  let is_active = (is_active_value as JSON.Bool).valueOf();
+  
+  if (is_active) {
+    Log("Device is authorized");
+  } else {
+    Log("Device is banned");
+  }
+
+  return is_active;
+}
 
 // // Verify that the message signature is correct and the device public key is authorized
-// function validateDeviceIdentity(message_json: JSON.Obj): bool {
-//   log("Validating device identity")
-//   // Get the public key from the message
-//   let public_key = getStringField(message_json, "public_key");
-//   // Verify that the device public key is authorized in the contract
-//   let authorized = auth_device(message_json)
-//   if (!authorized) {
-//       log("Device authentication failed");
-//       return false;
-//   }
-//   // Get the signature from the message
-//   let signature = getStringField(message_json, "signature");
-//   // Get the data object
-//   let data: JSON.Obj | null = message_json.getObj("data");
-//   if (data == null) return 0;
-//   // Perform signature verification
-//   let signature_ok = verifySig(public_key, signature, data.toString());
-//   if (!signature_ok) {
-//       log("Data signature is not valid");
-//       return false;
-//   }
-//   log("Data signature is valid")
-//   return true;
-// }
+function validateDeviceIdentity(message_json: JSON.Obj): bool {
+  Log("Validating device identity")
+  // Get the public key from the message
+  let public_key = getStringField(message_json, "public_key");
+  // Verify that the device public key is authorized in the contract
+  let authorized = auth_device(message_json)
+  if (!authorized) {
+      Log("Device authentication failed");
+      return false;
+  }
+  // Get the signature from the message
+  let signature = getStringField(message_json, "signature");
+  // Get the data object
+  let data: JSON.Obj | null = message_json.getObj("data");
+  if (data == null) return 0;
+  // Perform signature verification
+  // let signature_ok = verifySig(public_key, signature, data.toString());
+  // if (!signature_ok) {
+  //     log("Data signature is not valid");
+  //     return false;
+  // }
+  // log("Data signature is valid")
+  return true;
+}
+
+// Signature verification function
+// See smart lock tutorial
+// function verifySig()
 
 function storeData(message_json: JSON.Obj): i32 { 
   Log("Storing data message in DB64")
