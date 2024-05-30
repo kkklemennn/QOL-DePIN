@@ -299,10 +299,6 @@ function validateDeviceIdentity(message_json: JSON.Obj): bool {
   return true;
 }
 
-// Signature verification function
-// See smart lock tutorial
-// function verifySig()
-
 function storeData(message_json: JSON.Obj): i32 { 
   Log("Storing data message in DB64")
   // Get the device public key
