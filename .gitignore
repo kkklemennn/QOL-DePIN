@@ -3,6 +3,7 @@ applet/build/release.d.ts
 applet/build/release.js
 applet/build/release.wasm.map
 applet/build/release.wat
+arduino/ECCX08 signatures/log.txt
 blockchain/artifacts
 blockchain/cache
 blockchain/deployments
