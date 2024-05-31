@@ -1,17 +1,21 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
 #include <ArduinoECCX08.h>
 #include <ArduinoJson.h>
 #include "secrets.h"
 
 int status = WL_IDLE_STATUS;
 
-const int slot = 1;
-
 char server[] = "dev.w3bstream.com";
 int port = 8889;
 
 WiFiClient client;
+
+// NTP Client to get the current time
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
 
 void setup() {
   Serial.begin(9600);
@@ -41,34 +45,43 @@ void setup() {
   }
 
   // Attempt to connect to WiFi network:
-  // while (status != WL_CONNECTED) {
-  //   Serial.print("Attempting to connect to SSID: ");
-  //   Serial.println(SECRET_SSID);
-  //   status = WiFi.begin(SECRET_SSID, SECRET_PASS);
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(SECRET_SSID);
+    status = WiFi.begin(SECRET_SSID, SECRET_PASS);
 
-  //   // Wait 10 seconds for connection:
-  //   delay(10000);
-  // }
+    // Wait 10 seconds for connection:
+    delay(10000);
+  }
 
-  // // Print the status after attempting to connect
-  // if (status == WL_CONNECTED) {
-  //   Serial.println("Connected to WiFi");
-  //   printWiFiStatus();
-  // } else {
-  //   Serial.print("Failed to connect, status: ");
-  //   Serial.println(status);
-  // }
+  // Print the status after attempting to connect
+  if (status == WL_CONNECTED) {
+    Serial.println("Connected to WiFi");
+    printWiFiStatus();
+  } else {
+    Serial.print("Failed to connect, status: ");
+    Serial.println(status);
+  }
+
+  // Initialize the NTP client
+  timeClient.begin();
 }
 
 void loop() {
-  delay(20000); // send data every 60 seconds
+  timeClient.update(); // Update the time
   sendData();
+  delay(20000); // send data every 60 seconds
 }
 
 void sendData() {
+  // Ensure the NTP client has been updated
+  timeClient.update();
+
+  // Get the current Unix timestamp
+  unsigned long timestamp = timeClient.getEpochTime();
+
   // Dummy sensor data
   float sensor_reading = random(0, 100) / 1.0;
-  unsigned long timestamp = millis();
 
   StaticJsonDocument<256> data_payload;
   data_payload["sensor_reading"] = sensor_reading;
@@ -79,10 +92,13 @@ void sendData() {
 
   // Get the public key
   byte public_key[64];
-  if (!ECCX08.generatePublicKey(slot, public_key)) {
+  if (!ECCX08.generatePublicKey(0, public_key)) {
     Serial.println("Failed to get public key");
     return;
   }
+
+  Serial.print("Public key is: ");
+  printBufferHex(public_key, sizeof(public_key));
 
   // Ensure the data is 32 bytes for signing (padded if necessary)
   byte data_to_sign[32];
@@ -91,28 +107,20 @@ void sendData() {
 
   // Sign the data payload
   byte signature[64];
-  if (!ECCX08.ecSign(slot, data_to_sign, signature)) {
+  if (!ECCX08.ecSign(0, data_to_sign, signature)) {
     Serial.println("Failed to sign data");
     return;
   }
 
-  // [optional] validate the signature
-  // if (ECCX08.ecdsaVerify(data_to_sign, signature, public_key)) {
-  //   Serial.println("Verified signature successfully :D");
-  // } else {
-  //   Serial.println("Oh no! Failed to verify signature :(");
-  // }
-
   // Convert public key and signature to hex strings
   String public_key_hex = byteArrayToHexString(public_key, sizeof(public_key));
   String signature_hex = byteArrayToHexString(signature, sizeof(signature));
-  String device_id = "0x" + public_key_hex.substring(0, 64);
 
   // Prepare the full payload
   StaticJsonDocument<512> payload;
   payload["data"] = data_payload;
   payload["public_key"] = public_key_hex;
-  payload["deviceId"] = device_id;
+  payload["deviceId"] = "0x" + public_key_hex.substring(0, 64); // Generate device ID
   payload["signature"] = signature_hex;
 
   String payload_str;
@@ -177,4 +185,13 @@ String byteArrayToHexString(byte *buffer, int length) {
     hexString += String(buffer[i], HEX);
   }
   return hexString;
+}
+
+// alternative to byteArrayToHexString
+void printBufferHex(const byte input[], int inputLength) {
+  for (int i = 0; i < inputLength; i++) {
+    Serial.print(input[i] >> 4, HEX);
+    Serial.print(input[i] & 0x0f, HEX);
+  }
+  Serial.println();
 }
