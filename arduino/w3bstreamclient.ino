@@ -8,6 +8,8 @@
 
 int status = WL_IDLE_STATUS;
 
+const int slot = 1; // private key slot (1 = PEM)
+
 char server[] = "dev.w3bstream.com";
 int port = 8889;
 
@@ -70,7 +72,7 @@ void setup() {
 void loop() {
   timeClient.update(); // Update the time
   sendData();
-  delay(20000); // send data every 60 seconds
+  delay(20000); // send data every 20 seconds
 }
 
 void sendData() {
@@ -92,13 +94,10 @@ void sendData() {
 
   // Get the public key
   byte public_key[64];
-  if (!ECCX08.generatePublicKey(0, public_key)) {
+  if (!ECCX08.generatePublicKey(slot, public_key)) {
     Serial.println("Failed to get public key");
     return;
   }
-
-  Serial.print("Public key is: ");
-  printBufferHex(public_key, sizeof(public_key));
 
   // Ensure the data is 32 bytes for signing (padded if necessary)
   byte data_to_sign[32];
@@ -107,7 +106,7 @@ void sendData() {
 
   // Sign the data payload
   byte signature[64];
-  if (!ECCX08.ecSign(0, data_to_sign, signature)) {
+  if (!ECCX08.ecSign(slot, data_to_sign, signature)) {
     Serial.println("Failed to sign data");
     return;
   }
@@ -120,7 +119,7 @@ void sendData() {
   StaticJsonDocument<512> payload;
   payload["data"] = data_payload;
   payload["public_key"] = public_key_hex;
-  payload["deviceId"] = "0x" + public_key_hex.substring(0, 64); // Generate device ID
+  payload["deviceId"] = "0x" + public_key_hex.substring(0, 64);
   payload["signature"] = signature_hex;
 
   String payload_str;
@@ -185,13 +184,4 @@ String byteArrayToHexString(byte *buffer, int length) {
     hexString += String(buffer[i], HEX);
   }
   return hexString;
-}
-
-// alternative to byteArrayToHexString
-void printBufferHex(const byte input[], int inputLength) {
-  for (int i = 0; i < inputLength; i++) {
-    Serial.print(input[i] >> 4, HEX);
-    Serial.print(input[i] & 0x0f, HEX);
-  }
-  Serial.println();
 }
