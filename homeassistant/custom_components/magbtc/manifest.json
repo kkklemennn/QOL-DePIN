@@ -1,0 +1,9 @@
+{
+    "domain": "magbtc",
+    "name": "MagBTC",
+    "version": "1.0.0",
+    "dependencies": [],
+    "codeowners": ["@your_github_username"],
+    "requirements": ["requests"],
+    "config_flow": true
+}
