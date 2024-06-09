@@ -1,0 +1,8 @@
+Dependencies
+npm install typescript @types/node @types/express
+
+Compile the typescript file
+npx tsc
+
+Run the compiled javascript file
+node dist/server.js

@@ -1,3 +1,4 @@
+api/node_modules
 applet/node_modules
 applet/build/release.d.ts
 applet/build/release.js
