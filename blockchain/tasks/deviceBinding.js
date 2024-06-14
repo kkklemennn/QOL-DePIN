@@ -18,3 +18,7 @@ task("bind-device", "Bind a device to a user")
 
         console.log(`Device ${deviceid} binded to user ${userid}`);
     });
+
+    // suspend is admin
+    // unbind is not admin
+    // bind is admin or - because owner is 0x000...0 address

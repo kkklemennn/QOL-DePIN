@@ -17,3 +17,5 @@ task("remove-device", "Removes a registered device")
 
     console.log(`Device ${deviceid} removed successfully.`);
   });
+
+  // TODO - MAYBE REMOVE IT ALSO FROM THE DEVICE BINDING.
