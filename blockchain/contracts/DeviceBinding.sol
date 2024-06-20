@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-
 import "./DevicesRegistry.sol";
 
 contract DeviceBinding is Ownable {
@@ -15,25 +14,16 @@ contract DeviceBinding is Ownable {
     mapping(bytes32 => address) public deviceToOwner;
     mapping(address => bytes32[]) public ownerToDevices;
 
-    event OwnershipAssigned(
-        bytes32 indexed _deviceId,
-        address indexed _ownerAddress
-    );
+    event OwnershipAssigned(bytes32 indexed _deviceId, address indexed _ownerAddress);
     event OwnershipRenounced(bytes32 indexed _deviceId);
 
     modifier onlyAuthorizedDevice(bytes32 _deviceId) {
-        require(
-            devicesRegistry.isAuthorizedDevice(_deviceId),
-            "device is not authorized"
-        );
+        require(devicesRegistry.isRegistered(_deviceId), "device is not registered");
         _;
     }
 
     modifier onlyNotBoundDevice(bytes32 _deviceId) {
-        require(
-            deviceToOwner[_deviceId] == address(0),
-            "device has already been bound"
-        );
+        require(deviceToOwner[_deviceId] == address(0), "device has already been bound");
         _;
     }
 
@@ -43,10 +33,21 @@ contract DeviceBinding is Ownable {
     }
 
     modifier onlyDeviceOwnerOrAdmin(bytes32 _deviceId) {
+        require((deviceToOwner[_deviceId] == msg.sender) || (msg.sender == owner()), "not the device owner or admin");
+        _;
+    }
+
+    modifier onlySuspendedDevice(bytes32 _deviceId) {
+        require(!devicesRegistry.isActive(_deviceId), "device must be suspended before unbinding");
+        _;
+    }
+
+    modifier onlyAvailableForBinding(bytes32 _deviceId) {
         require(
-            (deviceToOwner[_deviceId] == msg.sender) ||
-                (msg.sender == this.owner()),
-            "not the device owner or admin"
+            deviceToOwner[_deviceId] == address(0) &&
+            devicesRegistry.isRegistered(_deviceId) && 
+            !devicesRegistry.isActive(_deviceId),
+            "device is already bound or not available for binding"
         );
         _;
     }
@@ -55,32 +56,26 @@ contract DeviceBinding is Ownable {
         devicesRegistry = DevicesRegistry(_devicesRegistryAddress);
     }
 
-    function bindDevice(
-        bytes32 _deviceId,
-        address _ownerAddress
-    )
-        public
-        onlyOwner
-        onlyNotBoundDevice(_deviceId)
-        onlyAuthorizedDevice(_deviceId)
-        returns (bool)
+    function bindDevice(bytes32 _deviceId, address _ownerAddress) 
+        public 
+        onlyAuthorizedDevice(_deviceId) 
+        onlyNotBoundDevice(_deviceId) 
+        onlyAvailableForBinding(_deviceId) 
+        returns (bool) 
     {
         _bindDevice(_deviceId, _ownerAddress);
-
         emit OwnershipAssigned(_deviceId, _ownerAddress);
         return true;
     }
 
-    function unbindDevice(
-        bytes32 _deviceId
-    )
-        public
-        onlyBoundDevice(_deviceId)
-        onlyDeviceOwnerOrAdmin(_deviceId)
-        returns (bool)
+    function unbindDevice(bytes32 _deviceId) 
+        public 
+        onlyBoundDevice(_deviceId) 
+        onlyDeviceOwnerOrAdmin(_deviceId) 
+        onlySuspendedDevice(_deviceId) 
+        returns (bool) 
     {
         _unbindDevice(_deviceId);
-
         emit OwnershipRenounced(_deviceId);
         return true;
     }
@@ -93,9 +88,7 @@ contract DeviceBinding is Ownable {
         return deviceToOwner[_deviceId];
     }
 
-    function getOwnedDevices(
-        address _ownerAddress
-    ) public view returns (bytes32[] memory) {
+    function getOwnedDevices(address _ownerAddress) public view returns (bytes32[] memory) {
         return ownerToDevices[_ownerAddress];
     }
 
@@ -112,10 +105,7 @@ contract DeviceBinding is Ownable {
         _removeDeviceFromOwner(ownerAddress, _deviceId);
     }
 
-    function _removeDeviceFromOwner(
-        address _ownerAddress,
-        bytes32 _deviceId
-    ) private {
+    function _removeDeviceFromOwner(address _ownerAddress, bytes32 _deviceId) private {
         bytes32[] storage ownedDevices = ownerToDevices[_ownerAddress];
         uint deviceIndex;
         for (uint i = 0; i < ownedDevices.length; i++) {

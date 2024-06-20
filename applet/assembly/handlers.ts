@@ -27,7 +27,7 @@ export function handle_device_registered(rid: i32): i32 {
 
   Log("Storing device id in DB...");
   let sql = `INSERT INTO "devices_registry" (device_id, is_registered, is_active) VALUES (?,?,?);`;
-  ExecSQL(sql, [new String(device_id), new Bool(true), new Bool(true)]);
+  ExecSQL(sql, [new String(device_id), new Bool(true), new Bool(false)]);
   return 0;
 }
 

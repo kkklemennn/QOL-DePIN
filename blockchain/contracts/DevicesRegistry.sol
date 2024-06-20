@@ -47,7 +47,7 @@ contract DevicesRegistry is Ownable {
     function registerDevice(
         bytes32 _deviceId
     ) public onlyOwner onlyUnregisteredDevice(_deviceId) {
-        devices[_deviceId] = Device(true, true);
+        devices[_deviceId] = Device(true, false);
         emit DeviceRegistered(_deviceId);
     }
 
@@ -92,5 +92,13 @@ contract DevicesRegistry is Ownable {
         returns (bool)
     {
         return true;
+    }
+
+    function isRegistered(bytes32 _deviceId) public view returns (bool) {
+        return devices[_deviceId].isRegistered;
+    }
+
+    function isActive(bytes32 _deviceId) public view returns (bool) {
+        return devices[_deviceId].isActive;
     }
 }
