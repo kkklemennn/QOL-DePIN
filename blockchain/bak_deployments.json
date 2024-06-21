@@ -255,7 +255,7 @@
           ]
         },
         "DevicesRegistry": {
-          "address": "0x6DB69A232193C138C5EDE02691EEFc6d3508acc9",
+          "address": "0x3Dc485d4AB966f7e526D679A9aF44F1be4a04c23",
           "abi": [
             {
               "inputs": [],
@@ -319,38 +319,6 @@
               "inputs": [
                 {
                   "indexed": true,
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                },
-                {
-                  "indexed": true,
-                  "internalType": "address",
-                  "name": "_ownerAddress",
-                  "type": "address"
-                }
-              ],
-              "name": "OwnershipAssigned",
-              "type": "event"
-            },
-            {
-              "anonymous": false,
-              "inputs": [
-                {
-                  "indexed": true,
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                }
-              ],
-              "name": "OwnershipRenounced",
-              "type": "event"
-            },
-            {
-              "anonymous": false,
-              "inputs": [
-                {
-                  "indexed": true,
                   "internalType": "address",
                   "name": "previousOwner",
                   "type": "address"
@@ -376,68 +344,6 @@
               "name": "activateDevice",
               "outputs": [],
               "stateMutability": "nonpayable",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "uint256",
-                  "name": "",
-                  "type": "uint256"
-                }
-              ],
-              "name": "allDeviceIds",
-              "outputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "",
-                  "type": "bytes32"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                },
-                {
-                  "internalType": "address",
-                  "name": "_ownerAddress",
-                  "type": "address"
-                }
-              ],
-              "name": "bindDevice",
-              "outputs": [
-                {
-                  "internalType": "bool",
-                  "name": "",
-                  "type": "bool"
-                }
-              ],
-              "stateMutability": "nonpayable",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "",
-                  "type": "bytes32"
-                }
-              ],
-              "name": "deviceToOwner",
-              "outputs": [
-                {
-                  "internalType": "address",
-                  "name": "",
-                  "type": "address"
-                }
-              ],
-              "stateMutability": "view",
               "type": "function"
             },
             {
@@ -472,96 +378,7 @@
                   "type": "bytes32"
                 }
               ],
-              "name": "getDeviceOwner",
-              "outputs": [
-                {
-                  "internalType": "address",
-                  "name": "",
-                  "type": "address"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [],
-              "name": "getDevicesCount",
-              "outputs": [
-                {
-                  "internalType": "uint256",
-                  "name": "",
-                  "type": "uint256"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "address",
-                  "name": "_ownerAddress",
-                  "type": "address"
-                }
-              ],
-              "name": "getOwnedDevices",
-              "outputs": [
-                {
-                  "internalType": "bytes32[]",
-                  "name": "",
-                  "type": "bytes32[]"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                }
-              ],
-              "name": "isActive",
-              "outputs": [
-                {
-                  "internalType": "bool",
-                  "name": "",
-                  "type": "bool"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                }
-              ],
               "name": "isAuthorizedDevice",
-              "outputs": [
-                {
-                  "internalType": "bool",
-                  "name": "",
-                  "type": "bool"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                }
-              ],
-              "name": "isRegistered",
               "outputs": [
                 {
                   "internalType": "bool",
@@ -580,30 +397,6 @@
                   "internalType": "address",
                   "name": "",
                   "type": "address"
-                }
-              ],
-              "stateMutability": "view",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "address",
-                  "name": "",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "",
-                  "type": "uint256"
-                }
-              ],
-              "name": "ownerToDevices",
-              "outputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "",
-                  "type": "bytes32"
                 }
               ],
               "stateMutability": "view",
@@ -665,25 +458,6 @@
               ],
               "name": "transferOwnership",
               "outputs": [],
-              "stateMutability": "nonpayable",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "bytes32",
-                  "name": "_deviceId",
-                  "type": "bytes32"
-                }
-              ],
-              "name": "unbindDevice",
-              "outputs": [
-                {
-                  "internalType": "bool",
-                  "name": "",
-                  "type": "bool"
-                }
-              ],
               "stateMutability": "nonpayable",
               "type": "function"
             }

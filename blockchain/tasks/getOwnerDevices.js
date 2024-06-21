@@ -5,13 +5,13 @@ task("get-owner-devices", "Gets all devices owned by a given address")
         const { deployments } = hre;
         const [deployer] = await ethers.getSigners();
 
-        const DeviceBinding = await deployments.get("DeviceBinding");
-        const deviceBinding = await ethers.getContractAt(
-            "DeviceBinding",
-            DeviceBinding.address,
-            deployer
+        const DevicesRegistry = await deployments.get("DevicesRegistry");
+        const deviceRegistry = await ethers.getContractAt(
+          "DevicesRegistry",
+          DevicesRegistry.address,
+          deployer
         );
 
-    const devices = await deviceBinding.getOwnedDevices(userid);
+    const devices = await deviceRegistry.getOwnedDevices(userid);
     console.log(`Devices owned by ${userid}:`, devices.join(", "));
   });

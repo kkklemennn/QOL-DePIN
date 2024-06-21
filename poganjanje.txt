@@ -13,7 +13,7 @@ To get started with Blockchain, type the following commands:
 cd /home/magbtcdev/mag-iotex/blockchain
 touch .env
 npm run test
-npm run deploy
+npm run deploy:testnet
 
 NOTE:
 If https://devnet.w3bstream.com/ has no logs, use https://dev.w3bstream.com/
