@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { registryABI, deviceBindingABI, tokenABI } from './abis';
+import { registryABI, tokenABI } from './abis';
 
-const registryAddress  = "0x3Dc485d4AB966f7e526D679A9aF44F1be4a04c23";
-const deviceBindingAddress = "0x06735BECaC4805e02da41ae1402fC3d11d3fbff9";
+const registryAddress  = "0x6DB69A232193C138C5EDE02691EEFc6d3508acc9";
 const tokenAddress = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
+const adminAddress = "0x74a5fCa82aFE98B0C571282D5162694f3D785e35";
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -17,6 +17,7 @@ function App() {
   const [deviceStatuses, setDeviceStatuses] = useState({});
   const [error, setError] = useState('');
   const [contractError, setContractError] = useState('');
+  const [unbindDeviceId, setUnbindDeviceId] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -50,8 +51,8 @@ function App() {
   useEffect(() => {
     const fetchOwnedDevices = async () => {
       try {
-        const deviceBindingContract = new ethers.Contract(deviceBindingAddress, deviceBindingABI, signer);
-        const ownedDevices = await deviceBindingContract.getOwnedDevices(account);
+        const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
+        const ownedDevices = await registryContract.getOwnedDevices(account);
         setOwnedDevices(ownedDevices);
 
         const devicesRegistryContract = new ethers.Contract(registryAddress, registryABI, signer);
@@ -76,8 +77,8 @@ function App() {
 
   const handleUnbindDevice = async (deviceId) => {
     try {
-      const bindingContract = new ethers.Contract(deviceBindingAddress, deviceBindingABI, signer);
-      const tx = await bindingContract.unbindDevice(deviceId);
+      const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
+      const tx = await registryContract.unbindDevice(deviceId);
       await tx.wait();
       console.log(`Device ${deviceId} successfully unbound.`);
       // Update the device list and statuses
@@ -94,7 +95,22 @@ function App() {
       setContractError(errorMessage);
     }
   };
-  
+
+  const handleAdminUnbindDevice = async () => {
+    try {
+      const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
+      const tx = await registryContract.unbindDevice(unbindDeviceId);
+      await tx.wait();
+      console.log(`Device ${unbindDeviceId} successfully unbound by admin.`);
+      setUnbindDeviceId('');
+    } catch (error) {
+      console.error('Error unbinding device by admin:', error);
+      setError('Failed to unbind device by admin. Please try again.');
+      const errorMessage = error?.error?.data?.message || error.message;
+      setContractError(errorMessage);
+    }
+  };
+
   const handleSuspendDevice = async (deviceId) => {
     try {
       const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
@@ -112,7 +128,7 @@ function App() {
       setContractError(errorMessage);
     }
   };
-  
+
   const handleActivateDevice = async (deviceId) => {
     try {
       const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
@@ -130,17 +146,17 @@ function App() {
       setContractError(errorMessage);
     }
   };
-  
+
   const handleBindDevice = async () => {
     try {
-      const contract = new ethers.Contract(deviceBindingAddress, deviceBindingABI, signer);
-      const tx = await contract.bindDevice(newDeviceId, account);
+      const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
+      const tx = await registryContract.bindDevice(newDeviceId, account);
       await tx.wait();
       console.log(`Device ${newDeviceId} bound to ${account} successfully.`);
       // Update the device list and statuses
       setOwnedDevices((prevDevices) => [...prevDevices, newDeviceId]);
-      const isRegistered = await contract.isRegistered(newDeviceId);
-      const isActive = await contract.isActive(newDeviceId);
+      const isRegistered = await registryContract.isRegistered(newDeviceId);
+      const isActive = await registryContract.isActive(newDeviceId);
       setDeviceStatuses((prevStatuses) => ({
         ...prevStatuses,
         [newDeviceId]: { deviceId: newDeviceId, isRegistered, isActive }
@@ -153,7 +169,7 @@ function App() {
       setContractError(errorMessage);
     }
   };
-  
+
   const handleRegisterDevice = async () => {
     try {
       const contract = new ethers.Contract(registryAddress, registryABI, signer);
@@ -168,7 +184,7 @@ function App() {
       setContractError(errorMessage);
     }
   };
-  
+
   const handleRemoveDevice = async (deviceId) => {
     try {
       const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
@@ -192,7 +208,7 @@ function App() {
 
   return (
     <div>
-      <h1>MetaMask & Hardhat Integration</h1>
+      <h1>MetaMask & Hardhat Integration {account === adminAddress && " - Admin Panel"}</h1>
       {account ? (
         <div>
           <p>Connected Account: {account}</p>
@@ -216,7 +232,9 @@ function App() {
                         <button onClick={() => handleActivateDevice(deviceId)}>Activate</button>
                       )}
                     </p>
-                    <button onClick={() => handleRemoveDevice(deviceId)}>Remove (Admin Feature)</button> {/* Admin Feature */}
+                    {account === adminAddress && (
+                      <button onClick={() => handleRemoveDevice(deviceId)}>Remove (Admin Feature)</button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -233,17 +251,32 @@ function App() {
               Bind Device
             </button>
           </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Enter Device ID to Register"
-              value={registerDeviceId}
-              onChange={(e) => setRegisterDeviceId(e.target.value)}
-            />
-            <button onClick={handleRegisterDevice}>
-              Register Device (Admin Feature)
-            </button>
-          </div>
+          {account === adminAddress && (
+            <div>
+              <input
+                type="text"
+                placeholder="Enter Device ID to Unbind"
+                value={unbindDeviceId}
+                onChange={(e) => setUnbindDeviceId(e.target.value)}
+              />
+              <button onClick={handleAdminUnbindDevice}>
+                Unbind Device (Admin Feature)
+              </button>
+            </div>
+          )}
+          {account === adminAddress && (
+            <div>
+              <input
+                type="text"
+                placeholder="Enter Device ID to Register"
+                value={registerDeviceId}
+                onChange={(e) => setRegisterDeviceId(e.target.value)}
+              />
+              <button onClick={handleRegisterDevice}>
+                Register Device (Admin Feature)
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div>

@@ -17,7 +17,4 @@ task("suspend-device", "Suspends a registered device")
 
     console.log(`Device ${deviceid} suspended successfully.`);
   });
-
-    // suspend is admin
-    // unbind is not admin
-    // bind is admin or - because owner is 0x000...0 address
+  
