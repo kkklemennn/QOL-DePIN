@@ -147,6 +147,11 @@ export const registryABI  = [
         "type": "bytes32"
       },
       {
+        "internalType": "bytes32",
+        "name": "_authToken",
+        "type": "bytes32"
+      },
+      {
         "internalType": "address",
         "name": "_ownerAddress",
         "type": "address"
@@ -356,6 +361,11 @@ export const registryABI  = [
       {
         "internalType": "bytes32",
         "name": "_deviceId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_authToken",
         "type": "bytes32"
       }
     ],

@@ -22,6 +22,7 @@ contract DevicesRegistry is Ownable {
     mapping(bytes32 => Device) public devices;
     mapping(bytes32 => address) public deviceToOwner;
     mapping(address => bytes32[]) public ownerToDevices;
+    mapping(bytes32 => bytes32) private authTokens;
     bytes32[] public allDeviceIds;
     Counters.Counter private totalDevices;
 
@@ -77,7 +78,9 @@ contract DevicesRegistry is Ownable {
 
     constructor() {}
 
-    function registerDevice(bytes32 _deviceId) public onlyOwner onlyUnregisteredDevice(_deviceId) {
+    function registerDevice(bytes32 _deviceId, bytes32 authCode) public onlyOwner onlyUnregisteredDevice(_deviceId) {
+        require(authCode != bytes32(0), "Invalid authentication code");
+        authTokens[_deviceId] = authCode;
         devices[_deviceId] = Device(true, false);
         allDeviceIds.push(_deviceId);
         totalDevices.increment();
@@ -85,7 +88,6 @@ contract DevicesRegistry is Ownable {
     }
 
     function removeDevice(bytes32 _deviceId) public onlyOwner onlyRegisteredDevice(_deviceId) onlyNotBoundDevice(_deviceId) {
-        //_unbindDevice(_deviceId); // Ensure to unbind the device before removing
         delete devices[_deviceId];
         totalDevices.decrement();
         emit DeviceDeleted(_deviceId);
@@ -101,10 +103,14 @@ contract DevicesRegistry is Ownable {
         emit DeviceActivated(_deviceId);
     }
 
-    function bindDevice(bytes32 _deviceId, address _ownerAddress) public onlyAuthorizedDevice(_deviceId) onlyNotBoundDevice(_deviceId) onlyAvailableForBinding(_deviceId) returns (bool) {
+    function bindDevice(bytes32 _deviceId, bytes32 authCode, address _ownerAddress) public onlyAuthorizedDevice(_deviceId) onlyNotBoundDevice(_deviceId) onlyAvailableForBinding(_deviceId) returns (bool) {
         if (msg.sender != owner()) {
             require(_ownerAddress == msg.sender, "Normal users can only bind the device to themselves");
         }
+        require(
+            authTokens[_deviceId] == authCode,
+            "Invalid authentication code"
+        );
         _bindDevice(_deviceId, _ownerAddress);
         emit OwnershipAssigned(_deviceId, _ownerAddress);
         return true;

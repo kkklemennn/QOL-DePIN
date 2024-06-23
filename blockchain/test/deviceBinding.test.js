@@ -8,6 +8,9 @@ const DEVICE_ID_1 = "0x123456789012345678901234567890123456789012345678901234567
 const DEVICE_ID_2 = "0x1234567890123456789012345678901234567890123456789012345678901235";
 const DEVICE_ID_3 = "0x1234567890123456789012345678901234567890123456789012345678901236";
 const ZERO_ADDR = hre.ethers.constants.AddressZero;
+const AUTH_TOKEN_1 = ethers.utils.formatBytes32String("token1234567890");
+const AUTH_TOKEN_2 = ethers.utils.formatBytes32String("token0987654321");
+const AUTH_TOKEN_3 = ethers.utils.formatBytes32String("token1122334455");
 
 describe("DevicesRegistry", function () {
   before(async function () {
@@ -28,18 +31,18 @@ describe("DevicesRegistry", function () {
 
   describe("Binding", function () {
     it("Should bind a device", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(user.address);
       expect(await devicesRegistry.getDevicesCount()).to.equal(1);
       expect(await devicesRegistry.getOwnedDevices(user.address)).to.eql([DEVICE_ID_1]);
     });
 
     it("Should bind multiple devices", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.registerDevice(DEVICE_ID_2);
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
-      await devicesRegistry.bindDevice(DEVICE_ID_2, user.address);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.registerDevice(DEVICE_ID_2, AUTH_TOKEN_2);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
+      await devicesRegistry.bindDevice(DEVICE_ID_2, AUTH_TOKEN_2, user.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(user.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_2)).to.equal(user.address);
       expect(await devicesRegistry.getDevicesCount()).to.equal(2);
@@ -47,13 +50,13 @@ describe("DevicesRegistry", function () {
     });
 
     it("Should bind multiple devices to multiple users", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.registerDevice(DEVICE_ID_2);
-      await devicesRegistry.registerDevice(DEVICE_ID_3);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.registerDevice(DEVICE_ID_2, AUTH_TOKEN_2);
+      await devicesRegistry.registerDevice(DEVICE_ID_3, AUTH_TOKEN_3);
 
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
-      await devicesRegistry.bindDevice(DEVICE_ID_2, user_2.address);
-      await devicesRegistry.bindDevice(DEVICE_ID_3, user.address);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
+      await devicesRegistry.bindDevice(DEVICE_ID_2, AUTH_TOKEN_2, user_2.address);
+      await devicesRegistry.bindDevice(DEVICE_ID_3, AUTH_TOKEN_3, user.address);
 
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(user.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_2)).to.equal(user_2.address);
@@ -64,85 +67,79 @@ describe("DevicesRegistry", function () {
     });
 
     it("Should emit an event when binding a device", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, user.address))
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address))
         .to.emit(devicesRegistry, "OwnershipAssigned")
         .withArgs(DEVICE_ID_1, user.address);
     });
 
     it("Should not bind a device if it is already bound", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
-      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, user.address)).to.be.revertedWith("device has already been bound");
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
+      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address)).to.be.revertedWith("device has already been bound");
     });
 
     it("Should not bind a device if it is not authorized", async function () {
-      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, user.address)).to.be.revertedWith("device is not registered");
+      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address)).to.be.revertedWith("device is not registered");
     });
 
     it("Should bind a device that is registered, not active, and has no owner", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(user.address);
       expect(await devicesRegistry.getDevicesCount()).to.equal(1);
     });
 
     it("User can bind the device if isRegistered is true, isActive is false, and address is 0x00", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(user.address);
       expect(await devicesRegistry.getDevicesCount()).to.equal(1);
     });
 
     it("Admin (owner of smart contract) can bind the device whenever", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.connect(owner).bindDevice(DEVICE_ID_1, owner.address);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.connect(owner).bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, owner.address);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(owner.address);
       expect(await devicesRegistry.getDevicesCount()).to.equal(1);
     });
 
     it("User cannot bind the device if it is active", async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
       await devicesRegistry.activateDevice(DEVICE_ID_1);
-      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, user.address)).to.be.revertedWith("device is already bound or not available for binding");
+      await expect(devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address)).to.be.revertedWith("device is already bound or not available for binding");
     });
   });
 
   describe("Unbinding", function () {
     beforeEach(async function () {
-      await devicesRegistry.registerDevice(DEVICE_ID_1);
-      await devicesRegistry.registerDevice(DEVICE_ID_2);
-      await devicesRegistry.bindDevice(DEVICE_ID_1, user.address);
+      await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
+      await devicesRegistry.registerDevice(DEVICE_ID_2, AUTH_TOKEN_2);
+      await devicesRegistry.bindDevice(DEVICE_ID_1, AUTH_TOKEN_1, user.address);
       await devicesRegistry.activateDevice(DEVICE_ID_1);
     });
 
     it("Should unbind a device", async function () {
-      // console.log("Devices of user before", await devicesRegistry.getOwnedDevices(user.address));
       await devicesRegistry.suspendDevice(DEVICE_ID_1);
       await devicesRegistry.unbindDevice(DEVICE_ID_1);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(ZERO_ADDR);
-      // expect((await devicesRegistry.getDevicesCount()).toString()).to.equal('0'); // Leave this out since we are dealing with more devices
       expect(await devicesRegistry.getOwnedDevices(user.address)).to.eql([]);
-      // console.log("Devices of user after", await devicesRegistry.getOwnedDevices(user.address));
     });
 
     it("Should unbind multiple devices", async function () {
       // Bind DEVICE_ID_2 to user
-      await devicesRegistry.bindDevice(DEVICE_ID_2, user.address);
+      await devicesRegistry.bindDevice(DEVICE_ID_2, AUTH_TOKEN_2, user.address);
 
       // Suspend DEVICE_ID_1
       await devicesRegistry.suspendDevice(DEVICE_ID_1);
-      // console.log(`Owner of DEVICE_ID_1 after binding: ${await devicesRegistry.getDeviceOwner(DEVICE_ID_1)}`);
   
       // Unbind both devices
       await devicesRegistry.unbindDevice(DEVICE_ID_1);
-      // console.log(`Owner of DEVICE_ID_1 after unbinding: ${await devicesRegistry.getDeviceOwner(DEVICE_ID_1)}`);
       await devicesRegistry.unbindDevice(DEVICE_ID_2);
-      // console.log(`Owner of DEVICE_ID_2 after unbinding: ${await devicesRegistry.getDeviceOwner(DEVICE_ID_2)}`);
   
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_1)).to.equal(ZERO_ADDR);
       expect(await devicesRegistry.getDeviceOwner(DEVICE_ID_2)).to.equal(ZERO_ADDR);
-  });
+    });
 
     it("Should emit an event when unbinding a device", async function () {
       await devicesRegistry.suspendDevice(DEVICE_ID_1);

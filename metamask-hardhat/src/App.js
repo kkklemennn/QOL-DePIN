@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { registryABI, tokenABI } from './abis';
 
-const registryAddress  = "0x6DB69A232193C138C5EDE02691EEFc6d3508acc9";
+const registryAddress = "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9";
 const tokenAddress = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
 const adminAddress = "0x74a5fCa82aFE98B0C571282D5162694f3D785e35";
 
@@ -13,11 +13,14 @@ function App() {
   const [tokenBalance, setTokenBalance] = useState(null);
   const [newDeviceId, setNewDeviceId] = useState('');
   const [registerDeviceId, setRegisterDeviceId] = useState('');
+  const [authToken, setAuthToken] = useState('');
+  const [bindAuthToken, setBindAuthToken] = useState('');
   const [ownedDevices, setOwnedDevices] = useState([]);
   const [deviceStatuses, setDeviceStatuses] = useState({});
   const [error, setError] = useState('');
   const [contractError, setContractError] = useState('');
   const [unbindDeviceId, setUnbindDeviceId] = useState('');
+  const [removeDeviceId, setRemoveDeviceId] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -150,7 +153,8 @@ function App() {
   const handleBindDevice = async () => {
     try {
       const registryContract = new ethers.Contract(registryAddress, registryABI, signer);
-      const tx = await registryContract.bindDevice(newDeviceId, account);
+      const formattedBindAuthToken = ethers.utils.formatBytes32String(bindAuthToken);
+      const tx = await registryContract.bindDevice(newDeviceId, formattedBindAuthToken, account);
       await tx.wait();
       console.log(`Device ${newDeviceId} bound to ${account} successfully.`);
       // Update the device list and statuses
@@ -162,6 +166,7 @@ function App() {
         [newDeviceId]: { deviceId: newDeviceId, isRegistered, isActive }
       }));
       setNewDeviceId('');
+      setBindAuthToken('');
     } catch (error) {
       console.error('Error binding device:', error);
       setError('Failed to bind device. Please try again.');
@@ -173,10 +178,12 @@ function App() {
   const handleRegisterDevice = async () => {
     try {
       const contract = new ethers.Contract(registryAddress, registryABI, signer);
-      const tx = await contract.registerDevice(registerDeviceId);
+      const formattedAuthToken = ethers.utils.formatBytes32String(authToken);
+      const tx = await contract.registerDevice(registerDeviceId, formattedAuthToken);
       await tx.wait();
       console.log(`Device ${registerDeviceId} registered successfully.`);
       setRegisterDeviceId('');
+      setAuthToken('');
     } catch (error) {
       console.error('Error registering device:', error);
       setError('Failed to register device. Please try again.');
@@ -241,42 +248,67 @@ function App() {
             </div>
           )}
           <div>
+          <input
+            type="text"
+            placeholder="Enter Device ID"
+            value={newDeviceId}
+            onChange={(e) => setNewDeviceId(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Enter Auth Token"
+            value={bindAuthToken}
+            onChange={(e) => setBindAuthToken(e.target.value)}
+          />
+          <button onClick={handleBindDevice}>
+            Bind Device
+          </button>
+        </div>
+        {account === adminAddress && (
+          <div>
             <input
               type="text"
-              placeholder="Enter Device ID"
-              value={newDeviceId}
-              onChange={(e) => setNewDeviceId(e.target.value)}
+              placeholder="Enter Device ID to Register"
+              value={registerDeviceId}
+              onChange={(e) => setRegisterDeviceId(e.target.value)}
             />
-            <button onClick={handleBindDevice}>
-              Bind Device
+            <input
+              type="text"
+              placeholder="Enter Auth Token"
+              value={authToken}
+              onChange={(e) => setAuthToken(e.target.value)}
+            />
+            <button onClick={handleRegisterDevice}>
+              Register Device (Admin Feature)
             </button>
           </div>
-          {account === adminAddress && (
-            <div>
-              <input
-                type="text"
-                placeholder="Enter Device ID to Unbind"
-                value={unbindDeviceId}
-                onChange={(e) => setUnbindDeviceId(e.target.value)}
-              />
-              <button onClick={handleAdminUnbindDevice}>
-                Unbind Device (Admin Feature)
-              </button>
-            </div>
-          )}
-          {account === adminAddress && (
-            <div>
-              <input
-                type="text"
-                placeholder="Enter Device ID to Register"
-                value={registerDeviceId}
-                onChange={(e) => setRegisterDeviceId(e.target.value)}
-              />
-              <button onClick={handleRegisterDevice}>
-                Register Device (Admin Feature)
-              </button>
-            </div>
-          )}
+        )}
+        {account === adminAddress && (
+          <div>
+            <input
+              type="text"
+              placeholder="Enter Device ID to Unbind"
+              value={unbindDeviceId}
+              onChange={(e) => setUnbindDeviceId(e.target.value)}
+            />
+            <button onClick={handleAdminUnbindDevice}>
+              Unbind Device (Admin Feature)
+            </button>
+          </div>
+        )}
+        {account === adminAddress && (
+          <div>
+            <input
+              type="text"
+              placeholder="Enter Device ID to Remove"
+              value={removeDeviceId}
+              onChange={(e) => setRemoveDeviceId(e.target.value)}
+            />
+            <button onClick={() => handleRemoveDevice(removeDeviceId)}>
+              Remove Device (Admin Feature)
+            </button>
+          </div>
+        )}
         </div>
       ) : (
         <div>

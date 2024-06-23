@@ -255,7 +255,7 @@
           ]
         },
         "DevicesRegistry": {
-          "address": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+          "address": "0x6DB69A232193C138C5EDE02691EEFc6d3508acc9",
           "abi": [
             {
               "inputs": [],
@@ -402,11 +402,6 @@
                 {
                   "internalType": "bytes32",
                   "name": "_deviceId",
-                  "type": "bytes32"
-                },
-                {
-                  "internalType": "bytes32",
-                  "name": "_authToken",
                   "type": "bytes32"
                 },
                 {
@@ -619,11 +614,6 @@
                 {
                   "internalType": "bytes32",
                   "name": "_deviceId",
-                  "type": "bytes32"
-                },
-                {
-                  "internalType": "bytes32",
-                  "name": "_authToken",
                   "type": "bytes32"
                 }
               ],
