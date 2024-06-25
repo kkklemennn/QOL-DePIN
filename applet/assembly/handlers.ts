@@ -1,4 +1,4 @@
-import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL } from "@w3bstream/wasm-sdk";
+import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL, ApiCall } from "@w3bstream/wasm-sdk";
 import { String, Bool } from "@w3bstream/wasm-sdk/assembly/sql";
 import { buildTxData } from "./utils/build-tx";
 
@@ -134,6 +134,25 @@ export function handle_data(rid: i32): i32 {
   // return 0
   return handle_process_rewards(rid);
 }
+
+// TESTING HANDLE DATA API CALL
+// export function handle_data(rid: i32): i32 {
+//   Log("Starting API call test...");
+
+//   // Manually create the JSON string for the API request
+//   const requestStr = `{
+//     "Url": "http://jsonplaceholder.typicode.com/todos/1",
+//     "Method": "GET"
+//   }`;
+
+//   // Make the API call
+//   const response = ApiCall(requestStr);
+  
+//   // Log the response
+//   Log("API Response: " + response);
+
+//   return 0;
+// }
 
 function validateData(message_json: JSON.Obj): boolean { 
   Log("Validating data message:\n" + message_json.toString())
@@ -289,7 +308,7 @@ function validateDeviceIdentity(message_json: JSON.Obj): bool {
   // Get the data object
   let data: JSON.Obj | null = message_json.getObj("data");
   if (data == null) return 0;
-  // Perform signature verification
+  // Perform signature verification TODO
   // let signature_ok = verifySig(public_key, signature, data.toString());
   // if (!signature_ok) {
   //     log("Data signature is not valid");

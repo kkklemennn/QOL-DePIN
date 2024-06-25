@@ -13,7 +13,7 @@
   "license": "ISC",
   "devDependencies": {
     "@as-pect/cli": "^8.1.0",
-    "@w3bstream/wasm-sdk": "^0.6.1",
+    "@w3bstream/wasm-sdk": "^0.6.6",
     "assemblyscript": "^0.27.0"
   },
   "type": "module",
@@ -26,5 +26,12 @@
   "directories": {
     "test": "tests"
   },
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@chainsafe/as-sha256": "^0.4.2",
+    "as-base64": "^0.2.0",
+    "as-big": "^0.2.3",
+    "as-bignum": "^0.3.1",
+    "as-fetch": "^2.1.4"
+  }
 }
