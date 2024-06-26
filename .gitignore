@@ -16,3 +16,4 @@ simulator/private.key
 pysim/.env
 pysim/private.key
 metamask-hardhat/node_modules
+.vscode

@@ -39,7 +39,6 @@ void setup() {
     Serial.println("ECCX08 initialized successfully!");
   }
 
-
   // Check for the WiFi module:
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
@@ -129,33 +128,38 @@ void sendData() {
   Serial.println("Prepared JSON payload:");
   Serial.println(payload_str);
 
-  // if (client.connect(server, port)) {
-  //   client.print("POST /srv-applet-mgr/v0/event/");
-  //   client.print(SECRET_PROJECT_NAME);
-  //   client.print("?eventType=");
-  //   client.print(SECRET_EVENT_TYPE);
-  //   client.println(" HTTP/1.1");
-  //   client.print("Host: ");
-  //   client.println(server);
-  //   client.println("Content-Type: application/json");
-  //   client.print("Authorization: Bearer ");
-  //   client.println(SECRET_PUB_TOKEN);
-  //   client.print("Content-Length: ");
-  //   client.println(payload_str.length());
-  //   client.println();
-  //   client.println(payload_str);
+  // Send data to W3bstream
+  // sendToW3bstream(payload_str);
+}
 
-  //   // Check the response
-  //   while (client.connected()) {
-  //     if (client.available()) {
-  //       String line = client.readStringUntil('\r');
-  //       Serial.print(line);
-  //     }
-  //   }
-  //   client.stop();
-  // } else {
-  //   Serial.println("Connection to server failed.");
-  // }
+void sendToW3bstream(String payload_str) {
+  if (client.connect(server, port)) {
+    client.print("POST /srv-applet-mgr/v0/event/");
+    client.print(SECRET_PROJECT_NAME);
+    client.print("?eventType=");
+    client.print(SECRET_EVENT_TYPE);
+    client.println(" HTTP/1.1");
+    client.print("Host: ");
+    client.println(server);
+    client.println("Content-Type: application/json");
+    client.print("Authorization: Bearer ");
+    client.println(SECRET_PUB_TOKEN);
+    client.print("Content-Length: ");
+    client.println(payload_str.length());
+    client.println();
+    client.println(payload_str);
+
+    // Check the response
+    while (client.connected()) {
+      if (client.available()) {
+        String line = client.readStringUntil('\r');
+        Serial.print(line);
+      }
+    }
+    client.stop();
+  } else {
+    Serial.println("Connection to server failed.");
+  }
 }
 
 void printWiFiStatus() {
