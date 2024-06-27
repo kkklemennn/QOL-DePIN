@@ -19,10 +19,10 @@ app.get('/health', (req, res) => {
 
 app.post('/verify', (req, res) => {
   try {
-    const { message, signature, publicKey } = req.body;
+    const { data, signature } = req.body;
 
-    // Log incoming request data
-    // console.log('Received request data:', { message, signature, publicKey });
+    // Convert the data object to a JSON string
+    const message = JSON.stringify(data);
 
     // Hash the message
     const hash = SHA256(message).toString();
@@ -33,7 +33,7 @@ app.post('/verify', (req, res) => {
     const s = signatureBytes.slice(32, 64).toString('hex');
 
     // Ensure the public key is correctly formatted with '04' prefix for uncompressed format
-    let formattedPublicKey = publicKey;
+    let formattedPublicKey = data.public_key;
     if (!formattedPublicKey.startsWith('04')) {
       formattedPublicKey = '04' + formattedPublicKey;
     }

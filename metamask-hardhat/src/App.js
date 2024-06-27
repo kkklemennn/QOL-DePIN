@@ -24,7 +24,6 @@ function App() {
   const [removeDeviceId, setRemoveDeviceId] = useState('');
   const [message, setMessage] = useState('');
   const [signature, setSignature] = useState('');
-  const [publicKey, setPublicKey] = useState('');
   const [verificationResult, setVerificationResult] = useState('');
 
   useEffect(() => {
@@ -220,10 +219,10 @@ function App() {
 
   const handleVerify = async () => {
     try {
+      const parsedMessage = JSON.parse(message);
       const response = await axios.post('http://localhost:5000/verify', {
-        message,
-        signature,
-        publicKey
+        data: parsedMessage,
+        signature
       });
       setVerificationResult(response.data.isValid ? 'Signature is valid' : 'Signature is invalid');
     } catch (error) {
@@ -343,14 +342,6 @@ function App() {
             placeholder="Signature"
             value={signature}
             onChange={(e) => setSignature(e.target.value)}
-          />
-          <br />
-          <textarea
-            rows="2"
-            cols="50"
-            placeholder="Public Key"
-            value={publicKey}
-            onChange={(e) => setPublicKey(e.target.value)}
           />
           <br />
           <button onClick={handleVerify}>Verify</button>
