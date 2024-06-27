@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { registryABI, tokenABI } from './abis';
-import { Buffer } from 'buffer';
-import EC from 'elliptic';
-import SHA256 from 'crypto-js/sha256';
+import axios from 'axios';
 
-const ec = new EC.ec('p256');
 const registryAddress = "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9";
 const tokenAddress = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
 const adminAddress = "0x74a5fCa82aFE98B0C571282D5162694f3D785e35";
@@ -221,44 +218,19 @@ function App() {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     try {
-      // Create a JSON object and serialize it without spaces
-      const messageObject = {
-        sensor_reading: 33,
-        timestamp: 1719421407
-      };
-      const message = JSON.stringify(messageObject);
-  
-      // Hash the message
-      const hash = SHA256(message).toString();
-      console.log("Computed hash:", hash);
-  
-      // Convert signature to appropriate format
-      const signatureBytes = Buffer.from(signature, 'hex');
-      const r = signatureBytes.slice(0, 32).toString('hex');
-      const s = signatureBytes.slice(32, 64).toString('hex');
-  
-      // Ensure the public key is correctly formatted with '04' prefix for uncompressed format
-      let formattedPublicKey = publicKey;
-      if (!formattedPublicKey.startsWith('04')) {
-        formattedPublicKey = '04' + formattedPublicKey;
-      }
-  
-      // Convert public key to appropriate format
-      const pubKey = ec.keyFromPublic(formattedPublicKey, 'hex');
-  
-      // Verify the signature
-      const isValid = pubKey.verify(hash, { r, s });
-  
-      setVerificationResult(isValid ? 'Signature is valid' : 'Signature is invalid');
+      const response = await axios.post('http://localhost:5000/verify', {
+        message,
+        signature,
+        publicKey
+      });
+      setVerificationResult(response.data.isValid ? 'Signature is valid' : 'Signature is invalid');
     } catch (error) {
       console.error('Error verifying signature:', error);
       setVerificationResult('Error verifying signature. Please check your inputs.');
     }
   };
-  
-  
 
   return (
     <div>

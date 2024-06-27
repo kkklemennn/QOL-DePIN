@@ -1,23 +1,45 @@
-# Getting Started with Create React App
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
-## Available Scripts
-
-In the project directory, you can run:
-
 ### `npm start`
 
 Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Open [http://localhost:3001](http://localhost:3001) to view it in your browser.
+Runs [http://localhost:5000](http://localhost:5000) the API server for verifying the signatures.
 
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
 
-### `npm test`
+### Example API call
+- METHOD: `POST`
+- URL: `http://localhost:5000/verify`
+- HEADERS:
+    - key: `Content-Type`
+    - val: `application/json`
+- BODY:
+```
+    {
+    "message": "{\"sensor_reading\":33,\"timestamp\":1719421407}",
+    "signature": "0677F7B08D36FB1CBC37A08797A0A959C1C865154D3E3392DCA5016D0C1806B0336737F0ABACCD3E3A1CEFFF44F004151D0505D8ECEF885559EA4A26D4304E4F",
+    "publicKey": "CC6D788FC040DFA2987D69A8C2F78AC70E06B0B747003F8158DB146104EB894F6B75AA1531E1B813148EBDF1E0DB3AF409C8B1D7EB8B1C6C23C6B61EF75E262B"
+    }
+```
+- EXPECTED RESPONSE:
+```
+{
+  "isValid": true
+}
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### Examples:
+##### GET
+`curl -X GET http://localhost:5000/health`
+##### POST
+```
+curl -X POST http://localhost:5000/verify \
+     -H "Content-Type: application/json" \
+     -d '{"message": "{\"sensor_reading\":33,\"timestamp\":1719421407}", "signature": "0677F7B08D36FB1CBC37A08797A0A959C1C865154D3E3392DCA5016D0C1806B0336737F0ABACCD3E3A1CEFFF44F004151D0505D8ECEF885559EA4A26D4304E4F", "publicKey": "CC6D788FC040DFA2987D69A8C2F78AC70E06B0B747003F8158DB146104EB894F6B75AA1531E1B813148EBDF1E0DB3AF409C8B1D7EB8B1C6C23C6B61EF75E262B"}'
+
+```
+
+OD TU NAPREJ JE GENERIC README
 
 ### `npm run build`
 
