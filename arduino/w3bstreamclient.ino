@@ -189,3 +189,10 @@ String byteArrayToHexString(byte *buffer, int length) {
   }
   return hexString;
 }
+
+// Example output:
+// {"data":
+// {"sensor_reading":33,"timestamp":1719421407},
+// "public_key":"cb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237cb013ccb972b9017909a459a3fe65455fa95ee3cea7c6f62a5b77bb1626bacf2",
+// "deviceId":"0xcb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237",
+// "signature":"d26ad24898eaa65dba3b5002f440f768c30391e201b78cc9b3905f5ff6ff444baf414395dbbcddae55a81f07379ef54e93af96b5cff32ca3037a9223b8f79989"}

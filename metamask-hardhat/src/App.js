@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { registryABI, tokenABI } from './abis';
+import { Buffer } from 'buffer';
+import EC from 'elliptic';
+import SHA256 from 'crypto-js/sha256';
 
+const ec = new EC.ec('p256');
 const registryAddress = "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9";
 const tokenAddress = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
 const adminAddress = "0x74a5fCa82aFE98B0C571282D5162694f3D785e35";
@@ -21,6 +25,10 @@ function App() {
   const [contractError, setContractError] = useState('');
   const [unbindDeviceId, setUnbindDeviceId] = useState('');
   const [removeDeviceId, setRemoveDeviceId] = useState('');
+  const [message, setMessage] = useState('');
+  const [signature, setSignature] = useState('');
+  const [publicKey, setPublicKey] = useState('');
+  const [verificationResult, setVerificationResult] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -213,6 +221,45 @@ function App() {
     }
   };
 
+  const handleVerify = () => {
+    try {
+      // Create a JSON object and serialize it without spaces
+      const messageObject = {
+        sensor_reading: 33,
+        timestamp: 1719421407
+      };
+      const message = JSON.stringify(messageObject);
+  
+      // Hash the message
+      const hash = SHA256(message).toString();
+      console.log("Computed hash:", hash);
+  
+      // Convert signature to appropriate format
+      const signatureBytes = Buffer.from(signature, 'hex');
+      const r = signatureBytes.slice(0, 32).toString('hex');
+      const s = signatureBytes.slice(32, 64).toString('hex');
+  
+      // Ensure the public key is correctly formatted with '04' prefix for uncompressed format
+      let formattedPublicKey = publicKey;
+      if (!formattedPublicKey.startsWith('04')) {
+        formattedPublicKey = '04' + formattedPublicKey;
+      }
+  
+      // Convert public key to appropriate format
+      const pubKey = ec.keyFromPublic(formattedPublicKey, 'hex');
+  
+      // Verify the signature
+      const isValid = pubKey.verify(hash, { r, s });
+  
+      setVerificationResult(isValid ? 'Signature is valid' : 'Signature is invalid');
+    } catch (error) {
+      console.error('Error verifying signature:', error);
+      setVerificationResult('Error verifying signature. Please check your inputs.');
+    }
+  };
+  
+  
+
   return (
     <div>
       <h1>MetaMask & Hardhat Integration {account === adminAddress && " - Admin Panel"}</h1>
@@ -248,67 +295,94 @@ function App() {
             </div>
           )}
           <div>
-          <input
-            type="text"
-            placeholder="Enter Device ID"
-            value={newDeviceId}
-            onChange={(e) => setNewDeviceId(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Enter Auth Token"
-            value={bindAuthToken}
-            onChange={(e) => setBindAuthToken(e.target.value)}
-          />
-          <button onClick={handleBindDevice}>
-            Bind Device
-          </button>
-        </div>
-        {account === adminAddress && (
-          <div>
             <input
               type="text"
-              placeholder="Enter Device ID to Register"
-              value={registerDeviceId}
-              onChange={(e) => setRegisterDeviceId(e.target.value)}
+              placeholder="Enter Device ID"
+              value={newDeviceId}
+              onChange={(e) => setNewDeviceId(e.target.value)}
             />
             <input
               type="text"
               placeholder="Enter Auth Token"
-              value={authToken}
-              onChange={(e) => setAuthToken(e.target.value)}
+              value={bindAuthToken}
+              onChange={(e) => setBindAuthToken(e.target.value)}
             />
-            <button onClick={handleRegisterDevice}>
-              Register Device (Admin Feature)
+            <button onClick={handleBindDevice}>
+              Bind Device
             </button>
           </div>
-        )}
-        {account === adminAddress && (
-          <div>
-            <input
-              type="text"
-              placeholder="Enter Device ID to Unbind"
-              value={unbindDeviceId}
-              onChange={(e) => setUnbindDeviceId(e.target.value)}
-            />
-            <button onClick={handleAdminUnbindDevice}>
-              Unbind Device (Admin Feature)
-            </button>
-          </div>
-        )}
-        {account === adminAddress && (
-          <div>
-            <input
-              type="text"
-              placeholder="Enter Device ID to Remove"
-              value={removeDeviceId}
-              onChange={(e) => setRemoveDeviceId(e.target.value)}
-            />
-            <button onClick={() => handleRemoveDevice(removeDeviceId)}>
-              Remove Device (Admin Feature)
-            </button>
-          </div>
-        )}
+          {account === adminAddress && (
+            <div>
+              <input
+                type="text"
+                placeholder="Enter Device ID to Register"
+                value={registerDeviceId}
+                onChange={(e) => setRegisterDeviceId(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Enter Auth Token"
+                value={authToken}
+                onChange={(e) => setAuthToken(e.target.value)}
+              />
+              <button onClick={handleRegisterDevice}>
+                Register Device (Admin Feature)
+              </button>
+            </div>
+          )}
+          {account === adminAddress && (
+            <div>
+              <input
+                type="text"
+                placeholder="Enter Device ID to Unbind"
+                value={unbindDeviceId}
+                onChange={(e) => setUnbindDeviceId(e.target.value)}
+              />
+              <button onClick={handleAdminUnbindDevice}>
+                Unbind Device (Admin Feature)
+              </button>
+            </div>
+          )}
+          {account === adminAddress && (
+            <div>
+              <input
+                type="text"
+                placeholder="Enter Device ID to Remove"
+                value={removeDeviceId}
+                onChange={(e) => setRemoveDeviceId(e.target.value)}
+              />
+              <button onClick={() => handleRemoveDevice(removeDeviceId)}>
+                Remove Device (Admin Feature)
+              </button>
+            </div>
+          )}
+          <h2>Verify Signature</h2>
+          <textarea
+            rows="5"
+            cols="50"
+            placeholder="Message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <br />
+          <textarea
+            rows="2"
+            cols="50"
+            placeholder="Signature"
+            value={signature}
+            onChange={(e) => setSignature(e.target.value)}
+          />
+          <br />
+          <textarea
+            rows="2"
+            cols="50"
+            placeholder="Public Key"
+            value={publicKey}
+            onChange={(e) => setPublicKey(e.target.value)}
+          />
+          <br />
+          <button onClick={handleVerify}>Verify</button>
+          <p>{verificationResult}</p>
         </div>
       ) : (
         <div>
