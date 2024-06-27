@@ -29,6 +29,16 @@ export function getFloatField(jsonObj: JSON.Obj, fieldName: string): f64 {
   return -1.0; // Sentinel value for errors
 }
 
+export function getFloat32Field(jsonObj: JSON.Obj, fieldName: string): f32 {
+  const field = jsonObj.get(fieldName);
+  if (field && field.isNum) {
+    // Convert the numeric JSON value to string and then parse it
+    let numStr = field.toString();
+    return f32.parse(numStr);
+  }
+  return -1.0; // Sentinel value for errors
+}
+
 export function getInt64Field(jsonObj: JSON.Obj, fieldName: string): i64 {
   const field = jsonObj.get(fieldName);
   if (field && field.isNum) {

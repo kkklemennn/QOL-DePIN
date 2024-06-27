@@ -82,8 +82,9 @@ void sendData() {
   unsigned long timestamp = timeClient.getEpochTime();
 
   // Dummy sensor data
-  float temperature = random(0, 100) / 1.0;
-  float humidity = random(0, 100) / 1.0;
+  float temperature = (float)random(0, 100) / 10.0;
+  float humidity = (float)random(0, 100) / 10.0;
+  Serial.println(temperature);
 
   // Retrieve the public key from slot 1
   byte publicKey[64];
@@ -102,7 +103,7 @@ void sendData() {
   StaticJsonDocument<256> jsonDoc;
   jsonDoc["temperature"] = temperature;
   jsonDoc["humidity"] = humidity;
-  jsonDoc["timestamp"] = timestamp;
+  jsonDoc["timestamp"] = String(timestamp);
   jsonDoc["public_key"] = publicKeyHex;
 
   // Convert JSON object to string
@@ -169,7 +170,7 @@ void sendData() {
   StaticJsonDocument<512> payload;
   payload["data"]["temperature"] = temperature;
   payload["data"]["humidity"] = humidity;
-  payload["data"]["timestamp"] = timestamp;
+  payload["data"]["timestamp"] = String(timestamp);
   payload["data"]["public_key"] = public_key_hex;
   payload["signature"] = signature_hex;
 
@@ -181,7 +182,7 @@ void sendData() {
   Serial.println(payload_str);
 
   // Send data to W3bstream
-  // sendToW3bstream(payload_str);
+  sendToW3bstream(payload_str);
 }
 
 void sendToW3bstream(String payload_str) {
@@ -247,6 +248,3 @@ void printHex(uint8_t num) {
   sprintf(hexCar, "%02X", num);
   Serial.print(hexCar);
 }
-
-// Example output:
-// {"temperature":25,"humidity":60,"timestamp":1719421407,"public_key":"cb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237cb013ccb972b9017909a459a3fe65455fa95ee3cea7c6f62a5b77bb1626bacf2"}

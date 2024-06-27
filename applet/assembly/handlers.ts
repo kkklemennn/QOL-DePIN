@@ -1,10 +1,10 @@
 import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL, ApiCall } from "@w3bstream/wasm-sdk";
-import { String, Bool } from "@w3bstream/wasm-sdk/assembly/sql";
+import { String, Bool, Float32 } from "@w3bstream/wasm-sdk/assembly/sql";
 import { buildTxData } from "./utils/build-tx";
 
 export { alloc } from "@w3bstream/wasm-sdk";
 
-import { validateMsg, getStringField, getFloatField, getInt64Field } from "./helpers";
+import { validateMsg, getStringField, getFloatField, getFloat32Field } from "./helpers";
 
 export function start(rid: i32): i32 {
   Log("Hello World!");
@@ -135,43 +135,27 @@ export function handle_data(rid: i32): i32 {
   return handle_process_rewards(rid);
 }
 
-// TESTING HANDLE DATA API CALL
-// export function handle_data(rid: i32): i32 {
-//   Log("Starting API call test...");
-
-//   // Manually create the JSON string for the API request
-//   const requestStr = `{
-//     "Url": "http://jsonplaceholder.typicode.com/todos/1",
-//     "Method": "GET"
-//   }`;
-
-//   // Make the API call
-//   const response = ApiCall(requestStr);
-  
-//   // Log the response
-//   Log("API Response: " + response);
-
-//   return 0;
-// }
-
 function validateData(message_json: JSON.Obj): boolean { 
   Log("Validating data message:\n" + message_json.toString())
   let valid: bool = true;
   // Validate the message fields
-  if (!(valid = valid && message_json.has("public_key"))) Log("public_key field is missing");
   if (!(valid = valid && message_json.has("signature"))) Log("device_signature field is missing");
   if (!(valid = valid && message_json.has("data"))) Log("data field is missing");
   
   let data_json = message_json.get("data") as JSON.Obj;
-  if (!(valid = valid && data_json.has("sensor_reading"))) Log("sensor_reading field is missing");
+  if (!(valid = valid && data_json.has("temperature"))) Log("temperature field is missing");
+  if (!(valid = valid && data_json.has("humidity"))) Log("humidity field is missing");
   if (!(valid = valid && data_json.has("timestamp"))) Log("timestamp field is missing");
+  if (!(valid = valid && data_json.has("public_key"))) Log("public_key field is missing");
 
   return valid as boolean;
-} 
+}
 
 // Get the owner of a specific device id from te w3bstream DB
 function get_device_owner(message_json: JSON.Obj): string {
-  let device_id = getStringField(message_json, "deviceId");
+  let data_json = message_json.get("data") as JSON.Obj;
+  let public_key = getStringField(data_json, "public_key");
+  let device_id = publicKeyToDeviceId(public_key);
   Log("Getting owner of device "+ device_id);
   let sql = "SELECT owner_address FROM device_binding WHERE device_id = '" + device_id + "'";
   let result = QuerySQL(sql);
@@ -196,9 +180,10 @@ export function handle_process_rewards(rid: i32): i32 {
   let message_json = JSON.parse(message_string) as JSON.Obj;
 
   // Get the public key from the message
-  let public_key = getStringField(message_json, "public_key");
+  let data_json = message_json.get("data") as JSON.Obj;
+  let public_key = getStringField(data_json, "public_key");
   // Get the latest IoT data point sent by the device
-  let sql = "SELECT public_key,sensor_reading FROM data_table WHERE public_key = '"+public_key+"' ORDER BY id DESC LIMIT 1";
+  let sql = "SELECT public_key,temperature,humidity FROM data_table WHERE public_key = '"+public_key+"' ORDER BY id DESC LIMIT 1";
   let result = QuerySQL(sql);
   let result_json = JSON.parse(result) as JSON.Obj;
   if (result_json == null) {
@@ -258,7 +243,10 @@ function auth_device(message_json: JSON.Obj): bool {
   Log("Authenticating device public key from DB...");
   
   // Get the public key from the message
-  let public_key = getStringField(message_json, "public_key");
+
+  // Get the public key from the message
+  let data_json = message_json.get("data") as JSON.Obj;
+  let public_key = getStringField(data_json, "public_key");
   
   // Get the device id from the message
   let device_id = publicKeyToDeviceId(public_key);
@@ -295,20 +283,18 @@ function auth_device(message_json: JSON.Obj): bool {
 // // Verify that the message signature is correct and the device public key is authorized
 function validateDeviceIdentity(message_json: JSON.Obj): bool {
   Log("Validating device identity")
-  // Get the public key from the message
-  let public_key = getStringField(message_json, "public_key");
   // Verify that the device public key is authorized in the contract
   let authorized = auth_device(message_json)
   if (!authorized) {
       Log("Device authentication failed");
       return false;
   }
-  // Get the signature from the message
-  let signature = getStringField(message_json, "signature");
   // Get the data object
   let data: JSON.Obj | null = message_json.getObj("data");
   if (data == null) return 0;
   // Perform signature verification TODO
+  // Get the signature from the message
+  let signature = getStringField(message_json, "signature");
   // let signature_ok = verifySig(public_key, signature, data.toString());
   // if (!signature_ok) {
   //     log("Data signature is not valid");
@@ -319,22 +305,29 @@ function validateDeviceIdentity(message_json: JSON.Obj): bool {
 }
 
 function storeData(message_json: JSON.Obj): i32 { 
-  Log("Storing data message in DB64")
-  // Get the device public key
-  let public_key = getStringField(message_json, "public_key");
+  Log("Storing data message in DB")
   // Get the device data
   let data_json = message_json.get("data") as JSON.Obj;
-  // Get the sensor reading
-  let sensor_reading = getFloatField(data_json, "sensor_reading");
-  const sensor_reading_str: string = sensor_reading.toString(); // Convert f64 to string
+  
+  // Get the temperature
+  let temperature = getFloat32Field(data_json, "temperature");
+  
+  // Get the humidity
+  let humidity = getFloat32Field(data_json, "humidity");
+  
   // Get the timestamp
   let timestamp = getStringField(data_json, "timestamp");
+
+  // Get the public key
+  let public_key = getStringField(data_json, "public_key");
+
   // Store the data in the W3bstream SQL Database
-  const query = `INSERT INTO "data_table" (public_key,sensor_reading,timestamp) VALUES (?,?,?);`;
+  const query = `INSERT INTO "data_table" (public_key,temperature,humidity,timestamp) VALUES (?,?,?,?);`;
   const value = ExecSQL(
       query, 
-      [new String(public_key), new String(sensor_reading_str), new String(timestamp)]);
+      [new String(public_key), new Float32(temperature), new Float32(humidity), new String(timestamp)]);
   Log("Query returned: " + value.toString());
 
   return value;
 }
+
