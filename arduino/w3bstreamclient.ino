@@ -82,43 +82,95 @@ void sendData() {
   unsigned long timestamp = timeClient.getEpochTime();
 
   // Dummy sensor data
-  float sensor_reading = random(0, 100) / 1.0;
+  float temperature = random(0, 100) / 1.0;
+  float humidity = random(0, 100) / 1.0;
 
-  StaticJsonDocument<256> data_payload;
-  data_payload["sensor_reading"] = sensor_reading;
-  data_payload["timestamp"] = timestamp;
-
-  String data_payload_str;
-  serializeJson(data_payload, data_payload_str);
-
-  // Get the public key
-  byte public_key[64];
-  if (!ECCX08.generatePublicKey(slot, public_key)) {
-    Serial.println("Failed to get public key");
+  // Retrieve the public key from slot 1
+  byte publicKey[64];
+  if (!ECCX08.generatePublicKey(slot, publicKey)) {
+    Serial.println("Failed to retrieve public key.");
     return;
   }
 
-  // Ensure the data is 32 bytes for signing (padded if necessary)
-  byte data_to_sign[32];
-  memset(data_to_sign, 0, sizeof(data_to_sign));  // Initialize with zeros
-  strncpy((char*)data_to_sign, data_payload_str.c_str(), sizeof(data_to_sign));
+  // Convert public key to hex string
+  char publicKeyHex[129]; // 64 bytes * 2 chars/byte + 1 null terminator
+  for (int i = 0; i < 64; i++) {
+    sprintf(&publicKeyHex[i * 2], "%02x", publicKey[i]);
+  }
 
-  // Sign the data payload
+  // Create a JSON object
+  StaticJsonDocument<256> jsonDoc;
+  jsonDoc["temperature"] = temperature;
+  jsonDoc["humidity"] = humidity;
+  jsonDoc["timestamp"] = timestamp;
+  jsonDoc["public_key"] = publicKeyHex;
+
+  // Convert JSON object to string
+  String jsonString;
+  serializeJson(jsonDoc, jsonString);
+
+  // Convert JSON string to byte array (UTF-8 encoding)
+  int data_len = jsonString.length();
+  byte data_bytes[data_len + 1];
+  jsonString.getBytes(data_bytes, data_len + 1);
+
+  // Print the JSON string
+  Serial.print("JSON String: ");
+  Serial.println(jsonString);
+
+  // Print the byte array
+  Serial.print("Byte Array: ");
+  for (int i = 0; i < data_len; i++) {
+    Serial.print(data_bytes[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+
+  // Compute SHA-256 hash of the message
+  byte *data_ptr = data_bytes;
+  int nbr_blocks = data_len / 64;
+  byte mySHA[32];
+  ECCX08.beginSHA256();
+
+  for (int i = 0; i < nbr_blocks; i++) {
+    ECCX08.updateSHA256(data_ptr);
+    data_ptr += 64;
+  }
+  ECCX08.endSHA256(data_ptr, data_len - nbr_blocks * 64, mySHA);
+
+  Serial.print("SHA result: ");
+  for (int i = 0; i < sizeof(mySHA); i++) {
+    printHex(mySHA[i]);
+  }
+  Serial.println();
+
+  // Print the hash in hexadecimal format
+  Serial.print("Hash (hex): ");
+  for (int i = 0; i < sizeof(mySHA); i++) {
+    if (mySHA[i] < 16) {
+      Serial.print('0');
+    }
+    Serial.print(mySHA[i], HEX);
+  }
+  Serial.println();
+
+  // Sign the hash (must be 32 bytes)
   byte signature[64];
-  if (!ECCX08.ecSign(slot, data_to_sign, signature)) {
-    Serial.println("Failed to sign data");
+  if (!ECCX08.ecSign(slot, mySHA, signature)) {
+    Serial.println("Failed to sign the message.");
     return;
   }
 
   // Convert public key and signature to hex strings
-  String public_key_hex = byteArrayToHexString(public_key, sizeof(public_key));
+  String public_key_hex = byteArrayToHexString(publicKey, sizeof(publicKey));
   String signature_hex = byteArrayToHexString(signature, sizeof(signature));
 
   // Prepare the full payload
   StaticJsonDocument<512> payload;
-  payload["data"] = data_payload;
-  payload["public_key"] = public_key_hex;
-  payload["deviceId"] = "0x" + public_key_hex.substring(0, 64);
+  payload["data"]["temperature"] = temperature;
+  payload["data"]["humidity"] = humidity;
+  payload["data"]["timestamp"] = timestamp;
+  payload["data"]["public_key"] = public_key_hex;
   payload["signature"] = signature_hex;
 
   String payload_str;
@@ -190,9 +242,11 @@ String byteArrayToHexString(byte *buffer, int length) {
   return hexString;
 }
 
+void printHex(uint8_t num) {
+  char hexCar[2];
+  sprintf(hexCar, "%02X", num);
+  Serial.print(hexCar);
+}
+
 // Example output:
-// {"data":
-// {"sensor_reading":33,"timestamp":1719421407},
-// "public_key":"cb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237cb013ccb972b9017909a459a3fe65455fa95ee3cea7c6f62a5b77bb1626bacf2",
-// "deviceId":"0xcb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237",
-// "signature":"d26ad24898eaa65dba3b5002f440f768c30391e201b78cc9b3905f5ff6ff444baf414395dbbcddae55a81f07379ef54e93af96b5cff32ca3037a9223b8f79989"}
+// {"temperature":25,"humidity":60,"timestamp":1719421407,"public_key":"cb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237cb013ccb972b9017909a459a3fe65455fa95ee3cea7c6f62a5b77bb1626bacf2"}
