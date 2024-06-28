@@ -84,7 +84,6 @@ void sendData() {
   // Dummy sensor data
   float temperature = (float)random(0, 100) / 10.0;
   float humidity = (float)random(0, 100) / 10.0;
-  Serial.println(temperature);
 
   // Retrieve the public key from slot 1
   byte publicKey[64];

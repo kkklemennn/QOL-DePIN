@@ -1,10 +1,10 @@
-import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL, ApiCall } from "@w3bstream/wasm-sdk";
+import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL, ApiCall, GetEnv } from "@w3bstream/wasm-sdk";
 import { String, Bool, Float32 } from "@w3bstream/wasm-sdk/assembly/sql";
 import { buildTxData } from "./utils/build-tx";
 
 export { alloc } from "@w3bstream/wasm-sdk";
 
-import { validateMsg, getStringField, getFloatField, getFloat32Field } from "./helpers";
+import { validateMsg, getStringField, getBoolField, getFloat32Field } from "./helpers";
 
 export function start(rid: i32): i32 {
   Log("Hello World!");
@@ -192,7 +192,7 @@ export function handle_process_rewards(rid: i32): i32 {
   }
   // Get the power consumption
   let owner = get_device_owner(message_json);
-  Log("Rewarding " + owner + " with 4 Tokens...");
+  Log("Rewarding " + owner + " with 3 Tokens...");
   let tx_hash = mintRewards(owner, 4);
   
   if (tx_hash == "") {
@@ -204,15 +204,12 @@ export function handle_process_rewards(rid: i32): i32 {
 }
 
 export function mintRewards(toAddress: string, amountToMint: u64): string {
-  // const TOKEN_DECIMALS: u64 = 1000000000000000000;  // Equivalent to 10^18
-  // const amountInWei: u64 = amountToMint * TOKEN_DECIMALS;
-
   const MINT_FUNCTION_SIGNATURE = "40c10f19";  // keccak256 hash of the function signature "mint(address,uint256)"
   const chainId = 4690;
   const ERC20Address = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
 
   // Build the transaction data
-  const txData = buildTxData(MINT_FUNCTION_SIGNATURE, toAddress, "3"); // for some reason 3 is exactly 10 tokens (10 * 10^18)
+  const txData = buildTxData(MINT_FUNCTION_SIGNATURE, toAddress, "3");
 
   // Send the transaction
   const txHash = SendTx(
@@ -282,26 +279,58 @@ function auth_device(message_json: JSON.Obj): bool {
 
 // // Verify that the message signature is correct and the device public key is authorized
 function validateDeviceIdentity(message_json: JSON.Obj): bool {
-  Log("Validating device identity")
+  Log("Validating device identity");
+
   // Verify that the device public key is authorized in the contract
-  let authorized = auth_device(message_json)
+  let authorized = auth_device(message_json);
   if (!authorized) {
-      Log("Device authentication failed");
-      return false;
+    Log("Device authentication failed");
+    return false;
   }
+
   // Get the data object
   let data: JSON.Obj | null = message_json.getObj("data");
-  if (data == null) return 0;
-  // Perform signature verification TODO
+  if (data == null) return false;
+
   // Get the signature from the message
   let signature = getStringField(message_json, "signature");
-  // let signature_ok = verifySig(public_key, signature, data.toString());
-  // if (!signature_ok) {
-  //     log("Data signature is not valid");
-  //     return false;
-  // }
-  // log("Data signature is valid")
-  return true;
+
+  // Validate the signature
+  let validSignature = validateSignature(data, signature);
+  return validSignature;
+}
+
+function validateSignature(data: JSON.Obj, signature: string): bool {
+  // Get the API URL from the environment variable
+  let apiUrl = GetEnv("API_VERIFY_URL");
+  if (!apiUrl) {
+    Log("API_VERIFY_URL not set");
+    return false;
+  }
+
+  // Prepare the API request
+  let dataStr = data.toString();
+  let requestBody = `{
+    "data": ${dataStr},
+    "signature": "${signature}"
+  }`;
+  let requestStr = `{
+    "Url": "${apiUrl}",
+    "Method": "POST",
+    "Headers": {
+      "Content-Type": "application/json"
+    },
+    "Body": ${requestBody}
+  }`;
+
+  // Make the API call
+  const response = ApiCall(requestStr);
+
+  // Parse the response and check the validity
+  let responseJSON = JSON.parse(response) as JSON.Obj;
+  let isValid = getBoolField(responseJSON, "isValid");
+  Log(isValid.toString());
+  return isValid;
 }
 
 function storeData(message_json: JSON.Obj): i32 { 

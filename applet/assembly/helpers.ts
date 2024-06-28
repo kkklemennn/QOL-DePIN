@@ -18,7 +18,6 @@ export function getStringField(jsonObj: JSON.Obj, fieldName: string): string {
   return field ? field.valueOf() : "";
 }
 
-
 export function getFloatField(jsonObj: JSON.Obj, fieldName: string): f64 {
   const field = jsonObj.get(fieldName);
   if (field && field.isNum) {
@@ -51,4 +50,12 @@ export function getInt64Field(jsonObj: JSON.Obj, fieldName: string): i64 {
     return i64.parse(str, 10);
   }
   return -1; // Sentinel value for errors or not found
+}
+
+export function getBoolField(jsonObj: JSON.Obj, fieldName: string): bool {
+  const field = jsonObj.get(fieldName);
+  if (field && field.isBool) {
+    return (field as JSON.Bool).valueOf();
+  }
+  return false; // Sentinel value for errors or not found
 }
