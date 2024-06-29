@@ -1,14 +1,13 @@
 {
-    "config": {
-      "step": {
-        "user": {
-          "title": "Set up MagBTC",
-          "description": "Set up MagBTC integration",
-          "data": {
-            "api_url": "API URL"
-          }
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up MagBTC",
+        "description": "Set up MagBTC integration",
+        "data": {
+          "client_ip": "Client IP Address"
         }
       }
     }
   }
-  
+}

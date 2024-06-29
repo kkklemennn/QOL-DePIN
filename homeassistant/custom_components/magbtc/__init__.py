@@ -1,4 +1,4 @@
-"""The integration of IoTeX based quality of life sensor"""
+"""The integration of MagBTC sensor"""
 import asyncio
 import logging
 
