@@ -1,11 +1,12 @@
 #include <WiFiNINA.h>
 #include <WiFiServer.h>
+#include <ArduinoJson.h>
 
 // Include your Wi-Fi credentials
 #include "secrets.h"
 
-char ssid[] = SECRET_SSID;
-char pass[] = SECRET_PASS;
+char ssid[] = SECRET_SSID;    // your network SSID (name)
+char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
 
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
@@ -54,15 +55,25 @@ void loop() {
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0) {
+            // Generate random temperature and humidity values
+            float temperature = random(150, 300) / 10.0;  // Generate a temperature between 15.0 and 30.0
+            float humidity = random(300, 700) / 10.0;     // Generate a humidity between 30.0 and 70.0
+
+            // Create a JSON object
+            StaticJsonDocument<200> jsonDoc;
+            jsonDoc["temperature"] = temperature;
+            jsonDoc["humidity"] = humidity;
+            String jsonString;
+            serializeJson(jsonDoc, jsonString);
+
             // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
             // and a content-type so the client knows what's coming, then a blank line:
             client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/plain");
+            client.println("Content-type: application/json");
             client.println();
 
-            // Replace with your sensor reading code
-            float sensor_value = analogRead(A0);  // Example sensor reading
-            client.print(sensor_value);
+            // Send the JSON response
+            client.print(jsonString);
 
             // The HTTP response ends with another blank line:
             client.println();
