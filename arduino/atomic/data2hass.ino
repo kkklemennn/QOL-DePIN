@@ -1,6 +1,7 @@
 #include <WiFiNINA.h>
 #include <WiFiServer.h>
 #include <ArduinoJson.h>
+#include <ECCX08.h>
 
 // Include your Wi-Fi credentials
 #include "secrets.h"
@@ -10,6 +11,23 @@ char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as k
 
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
+
+// Function to get the first 64 characters of the public key from slot 1 of ECC
+String getDeviceID() {
+  uint8_t publicKey[64];
+  ECCX08.begin();
+  if (!ECCX08.generatePublicKey(1, publicKey)) {
+    Serial.println("Failed to get public key");
+    return "";
+  }
+  String deviceID = "0x";
+  for (int i = 0; i < 32; i++) {  // First 64 characters
+    char hex[3];
+    sprintf(hex, "%02X", publicKey[i]);
+    deviceID += hex;
+  }
+  return deviceID;
+}
 
 void setup() {
   Serial.begin(9600);
@@ -47,14 +65,38 @@ void loop() {
   if (client) {
     Serial.println("New client");
     String currentLine = "";
+    String request = "";
     while (client.connected()) {
       if (client.available()) {
         char c = client.read();
         Serial.write(c);
         if (c == '\n') {
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 0) {
+          request += currentLine; // Save the request
+          currentLine = ""; // Clear the current line
+        } else if (c != '\r') {
+          currentLine += c;
+        }
+        
+        // If the request is complete, process it
+        if (c == '\n' && currentLine.length() == 0) {
+          Serial.println("Request: " + request);
+          
+          if (request.startsWith("GET /id")) {
+            // Handle the /id endpoint
+            String deviceID = getDeviceID();
+            StaticJsonDocument<200> jsonDoc;
+            jsonDoc["device_id"] = deviceID;
+            String jsonString;
+            serializeJson(jsonDoc, jsonString);
+
+            // Send the response
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type: application/json");
+            client.println();
+            client.print(jsonString);
+            client.println();
+          } else {
+            // Handle other endpoints
             // Generate random temperature and humidity values
             float temperature = random(150, 300) / 10.0;  // Generate a temperature between 15.0 and 30.0
             float humidity = random(300, 700) / 10.0;     // Generate a humidity between 30.0 and 70.0
@@ -77,12 +119,8 @@ void loop() {
 
             // The HTTP response ends with another blank line:
             client.println();
-            break;
-          } else {
-            currentLine = "";
           }
-        } else if (c != '\r') {
-          currentLine += c;
+          break;
         }
       }
     }

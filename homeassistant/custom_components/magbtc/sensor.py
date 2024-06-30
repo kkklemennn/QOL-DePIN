@@ -6,7 +6,7 @@ from datetime import timedelta, datetime
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.entity_registry import async_get
+from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import PERCENTAGE
 from homeassistant.components.sensor import SensorDeviceClass
@@ -23,6 +23,17 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     _LOGGER.debug("Setting up sensor with update interval: %s", update_interval)
 
+    # Fetch the device ID from the client
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://{client_ip}/id") as response:
+                response.raise_for_status()
+                data = await response.json()
+                device_id = data.get("device_id")
+    except aiohttp.ClientError as e:
+        _LOGGER.error("Error fetching device ID from client: %s", e)
+        return
+
     # Ensure the domain data structure exists
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
@@ -35,7 +46,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         return
 
     # Create the sensor manager
-    sensor_manager = MagBTCSensorManager(hass, client_ip, update_interval)
+    sensor_manager = MagBTCSensorManager(hass, client_ip, device_id, update_interval)
     async_add_entities(sensor_manager.sensors, update_before_add=True)
 
     # Store the entities to prevent duplicates
@@ -45,35 +56,38 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=config_entry.entry_id,
-        identifiers={(DOMAIN, client_ip)},
+        identifiers={(DOMAIN, device_id)},
         name="MagBTC Sensor",
         manufacturer="MagBTC",
-        model="Temperature and Humidity Sensor"
+        model=f"Temperature and Humidity Sensor ({device_id})",
+        sw_version="1.0",
+        configuration_url=f"http://{client_ip}"
     )
 
     # Register entities
-    entity_registry = await async_get(hass)
+    entity_registry = async_get_entity_registry(hass)
     for sensor in sensor_manager.sensors:
         entity_registry.async_get_or_create(
             domain="sensor",
             platform=DOMAIN,
             unique_id=sensor.unique_id,
             config_entry=config_entry,
-            device_id=device_registry.async_get_device({(DOMAIN, client_ip)}).id
+            device_id=device_registry.async_get_device({(DOMAIN, device_id)}).id
         )
 
 class MagBTCSensorManager:
     """Manager to handle updating multiple sensors from one API call."""
 
-    def __init__(self, hass, client_ip, update_interval):
+    def __init__(self, hass, client_ip, device_id, update_interval):
         """Initialize the sensor manager."""
         self._hass = hass
         self._client_ip = client_ip
+        self._device_id = device_id
         self._update_interval = update_interval
         self._remove_listener = None
 
-        self.temperature_sensor = MagBTCTemperatureSensor(client_ip)
-        self.humidity_sensor = MagBTCHumiditySensor(client_ip)
+        self.temperature_sensor = MagBTCTemperatureSensor(client_ip, device_id)
+        self.humidity_sensor = MagBTCHumiditySensor(client_ip, device_id)
 
         self.sensors = [self.temperature_sensor, self.humidity_sensor]
 
@@ -128,12 +142,13 @@ class MagBTCSensorManager:
 class MagBTCTemperatureSensor(SensorEntity):
     """Representation of a Temperature Sensor."""
 
-    def __init__(self, client_ip):
+    def __init__(self, client_ip, device_id):
         """Initialize the temperature sensor."""
         self._state = None
         self._client_ip = client_ip
+        self._device_id = device_id
         self._name = "MagBTC Temperature Sensor"
-        self._unique_id = f"{client_ip}_temperature"
+        self._unique_id = f"{device_id}_temperature"
 
     @property
     def name(self):
@@ -159,10 +174,12 @@ class MagBTCTemperatureSensor(SensorEntity):
     def device_info(self):
         """Return device information about this sensor."""
         return {
-            "identifiers": {(DOMAIN, self._client_ip)},
+            "identifiers": {(DOMAIN, self._device_id)},
             "name": "MagBTC Sensor",
             "manufacturer": "MagBTC",
-            "model": "Temperature and Humidity Sensor",
+            "model": f"Temperature and Humidity Sensor ({self._device_id})",
+            "sw_version": "1.0",
+            "configuration_url": f"http://{self._client_ip}"
         }
 
     @property
@@ -183,12 +200,13 @@ class MagBTCTemperatureSensor(SensorEntity):
 class MagBTCHumiditySensor(SensorEntity):
     """Representation of a Humidity Sensor."""
 
-    def __init__(self, client_ip):
+    def __init__(self, client_ip, device_id):
         """Initialize the humidity sensor."""
         self._state = None
         self._client_ip = client_ip
+        self._device_id = device_id
         self._name = "MagBTC Humidity Sensor"
-        self._unique_id = f"{client_ip}_humidity"
+        self._unique_id = f"{device_id}_humidity"
 
     @property
     def name(self):
@@ -214,10 +232,12 @@ class MagBTCHumiditySensor(SensorEntity):
     def device_info(self):
         """Return device information about this sensor."""
         return {
-            "identifiers": {(DOMAIN, self._client_ip)},
+            "identifiers": {(DOMAIN, self._device_id)},
             "name": "MagBTC Sensor",
             "manufacturer": "MagBTC",
-            "model": "Temperature and Humidity Sensor",
+            "model": f"Temperature and Humidity Sensor ({self._device_id})",
+            "sw_version": "1.0",
+            "configuration_url": f"http://{self._client_ip}"
         }
 
     @property
