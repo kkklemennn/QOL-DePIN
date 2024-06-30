@@ -5,5 +5,12 @@
     "dependencies": [],
     "codeowners": ["@kkklemennn"],
     "requirements": ["aiohttp"],
-    "config_flow": true
+    "config_flow": true,
+    "panel_iframe": {
+        "magbtc_dashboard": {
+          "title": "MagBTC Device Manager",
+          "icon": "mdi:monitor-dashboard",
+          "url": "http://localhost:3001/"
+        }
+      }
 }
