@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { registryABI, tokenABI } from './abis';
 import axios from 'axios';
+import Documentation from './documentation';
+import Main from './main';
 
 const registryAddress = "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9";
 const tokenAddress = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
@@ -25,6 +27,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [signature, setSignature] = useState('');
   const [verificationResult, setVerificationResult] = useState('');
+  const [activeTab, setActiveTab] = useState('main');
 
   useEffect(() => {
     const init = async () => {
@@ -48,10 +51,11 @@ function App() {
           const queryParams = new URLSearchParams(window.location.search);
           const deviceid = queryParams.get('deviceid');
           const authtoken = queryParams.get('authtoken');
+          const tab = queryParams.get('tab');
 
           if (deviceid) setNewDeviceId(deviceid);
           if (authtoken) setBindAuthToken(authtoken);
-
+          if (tab) setActiveTab(tab);
         } else {
           setError('MetaMask not detected. Please install MetaMask and refresh the page.');
         }
@@ -243,128 +247,50 @@ function App() {
   return (
     <div>
       <h1>MetaMask & Hardhat Integration {account === adminAddress && " - Admin Panel"}</h1>
-      {account ? (
-        <div>
-          <p>Connected Account: {account}</p>
-          <p>Token Balance: {tokenBalance} TOC</p>
-          {ownedDevices.length > 0 && (
-            <div>
-              <p>Devices owned by {account}:</p>
-              <ul>
-                {ownedDevices.map((deviceId, index) => (
-                  <li key={index}>
-                    <p>Device ID: {deviceId}</p>
-                    <p>
-                      Is Registered: {deviceStatuses[deviceId]?.isRegistered ? 'Yes' : 'No'}
-                      <button onClick={() => handleUnbindDevice(deviceId)}>Unbind</button>
-                    </p>
-                    <p>
-                      Is Active: {deviceStatuses[deviceId]?.isActive ? 'Yes' : 'No'}
-                      {deviceStatuses[deviceId]?.isActive ? (
-                        <button onClick={() => handleSuspendDevice(deviceId)}>Suspend</button>
-                      ) : (
-                        <button onClick={() => handleActivateDevice(deviceId)}>Activate</button>
-                      )}
-                    </p>
-                    {account === adminAddress && (
-                      <button onClick={() => handleRemoveDevice(deviceId)}>Remove (Admin Feature)</button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <div>
-            <input
-              type="text"
-              placeholder="Enter Device ID"
-              value={newDeviceId}
-              onChange={(e) => setNewDeviceId(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Enter Auth Token"
-              value={bindAuthToken}
-              onChange={(e) => setBindAuthToken(e.target.value)}
-            />
-            <button onClick={handleBindDevice}>
-              Bind Device
-            </button>
-          </div>
-          {account === adminAddress && (
-            <div>
-              <input
-                type="text"
-                placeholder="Enter Device ID to Register"
-                value={registerDeviceId}
-                onChange={(e) => setRegisterDeviceId(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Enter Auth Token"
-                value={authToken}
-                onChange={(e) => setAuthToken(e.target.value)}
-              />
-              <button onClick={handleRegisterDevice}>
-                Register Device (Admin Feature)
-              </button>
-            </div>
-          )}
-          {account === adminAddress && (
-            <div>
-              <input
-                type="text"
-                placeholder="Enter Device ID to Unbind"
-                value={unbindDeviceId}
-                onChange={(e) => setUnbindDeviceId(e.target.value)}
-              />
-              <button onClick={handleAdminUnbindDevice}>
-                Unbind Device (Admin Feature)
-              </button>
-            </div>
-          )}
-          {account === adminAddress && (
-            <div>
-              <input
-                type="text"
-                placeholder="Enter Device ID to Remove"
-                value={removeDeviceId}
-                onChange={(e) => setRemoveDeviceId(e.target.value)}
-              />
-              <button onClick={() => handleRemoveDevice(removeDeviceId)}>
-                Remove Device (Admin Feature)
-              </button>
-            </div>
-          )}
-          <h2>Verify Signature</h2>
-          <textarea
-            rows="5"
-            cols="50"
-            placeholder="Message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <br />
-          <textarea
-            rows="2"
-            cols="50"
-            placeholder="Signature"
-            value={signature}
-            onChange={(e) => setSignature(e.target.value)}
-          />
-          <br />
-          <button onClick={handleVerify}>Verify</button>
-          <p>{verificationResult}</p>
-        </div>
-      ) : (
-        <div>
-          <p>Please connect to MetaMask.</p>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-        </div>
+      <div>
+        <button onClick={() => setActiveTab('main')}>Main</button>
+        <button onClick={() => setActiveTab('documentation')}>Documentation</button>
+      </div>
+      {activeTab === 'main' && (
+        <Main
+          account={account}
+          adminAddress={adminAddress}
+          tokenBalance={tokenBalance}
+          ownedDevices={ownedDevices}
+          deviceStatuses={deviceStatuses}
+          handleUnbindDevice={handleUnbindDevice}
+          handleSuspendDevice={handleSuspendDevice}
+          handleActivateDevice={handleActivateDevice}
+          handleRemoveDevice={handleRemoveDevice}
+          handleBindDevice={handleBindDevice}
+          handleRegisterDevice={handleRegisterDevice}
+          handleAdminUnbindDevice={handleAdminUnbindDevice}
+          handleVerify={handleVerify}
+          newDeviceId={newDeviceId}
+          bindAuthToken={bindAuthToken}
+          registerDeviceId={registerDeviceId}
+          authToken={authToken}
+          unbindDeviceId={unbindDeviceId}
+          removeDeviceId={removeDeviceId}
+          message={message}
+          signature={signature}
+          setNewDeviceId={setNewDeviceId}
+          setBindAuthToken={setBindAuthToken}
+          setRegisterDeviceId={setRegisterDeviceId}
+          setAuthToken={setAuthToken}
+          setUnbindDeviceId={setUnbindDeviceId}
+          setRemoveDeviceId={setRemoveDeviceId}
+          setMessage={setMessage}
+          setSignature={setSignature}
+          verificationResult={verificationResult}
+          error={error}
+          contractError={contractError}
+        />
       )}
-      {contractError && <p style={{ color: 'red' }}>Smart Contract Error: {contractError}</p>}
+      {activeTab === 'documentation' && <Documentation />}
     </div>
   );
+  
 }
 
 export default App;

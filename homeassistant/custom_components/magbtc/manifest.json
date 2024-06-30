@@ -1,16 +1,17 @@
 {
-    "domain": "magbtc",
-    "name": "MagBTC",
-    "version": "1.0.0",
-    "dependencies": [],
-    "codeowners": ["@kkklemennn"],
-    "requirements": ["aiohttp"],
-    "config_flow": true,
-    "panel_iframe": {
-        "magbtc_dashboard": {
-          "title": "MagBTC Device Manager",
-          "icon": "mdi:monitor-dashboard",
-          "url": "http://localhost:3001/"
-        }
+  "domain": "magbtc",
+  "name": "MagBTC",
+  "version": "1.0.0",
+  "dependencies": [],
+  "codeowners": ["@kkklemennn"],
+  "requirements": ["aiohttp"],
+  "documentation": "/magbtc?tab=documentation",
+  "config_flow": true,
+  "panel_iframe": {
+      "magbtc_dashboard": {
+        "title": "MagBTC Device Manager",
+        "icon": "mdi:monitor-dashboard",
+        "url": "http://localhost:3001/"
       }
+    }
 }
