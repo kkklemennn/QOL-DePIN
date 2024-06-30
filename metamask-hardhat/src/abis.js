@@ -1,4 +1,4 @@
-export const registryABI  = [
+const registryABI  = [
   {
     "inputs": [],
     "stateMutability": "nonpayable",
@@ -441,7 +441,7 @@ export const registryABI  = [
   }
 ];
 
-  export const tokenABI = [
+  const tokenABI = [
     {
       "inputs": [],
       "stateMutability": "nonpayable",
@@ -984,3 +984,5 @@ export const registryABI  = [
       "type": "function"
     }
   ];
+
+  module.exports = { registryABI, tokenABI };

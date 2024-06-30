@@ -43,6 +43,15 @@ function App() {
           const tokenContract = new ethers.Contract(tokenAddress, tokenABI, web3Provider);
           const balance = await tokenContract.balanceOf(account);
           setTokenBalance(ethers.utils.formatUnits(balance, 18)); // Assuming token has 18 decimals
+
+          // Check for query parameters
+          const queryParams = new URLSearchParams(window.location.search);
+          const deviceid = queryParams.get('deviceid');
+          const authtoken = queryParams.get('authtoken');
+
+          if (deviceid) setNewDeviceId(deviceid);
+          if (authtoken) setBindAuthToken(authtoken);
+
         } else {
           setError('MetaMask not detected. Please install MetaMask and refresh the page.');
         }
