@@ -4,6 +4,7 @@ import { registryABI, tokenABI } from './abis';
 import axios from 'axios';
 import Documentation from './documentation';
 import Main from './main';
+import VerifySignature from './verifySignature';
 
 const registryAddress = "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9";
 const tokenAddress = "0x911c3A704c6b5954Aa4d698fb41C77D06d1C579B";
@@ -245,11 +246,12 @@ function App() {
   };
 
   return (
-    <div>
-      <h1>MetaMask & Hardhat Integration {account === adminAddress && " - Admin Panel"}</h1>
-      <div>
-        <button onClick={() => setActiveTab('main')}>Main</button>
-        <button onClick={() => setActiveTab('documentation')}>Documentation</button>
+    <div className="container mt-4">
+      <h1>MagBTC Device Manager {account === adminAddress && " - Admin Panel"}</h1>
+      <div className="btn-group mb-3">
+        <button className="btn btn-primary" onClick={() => setActiveTab('main')}>Main</button>
+        <button className="btn btn-secondary" onClick={() => setActiveTab('documentation')}>Documentation</button>
+        <button className="btn btn-info" onClick={() => setActiveTab('verify')}>Verify Signature</button>
       </div>
       {activeTab === 'main' && (
         <Main
@@ -265,29 +267,33 @@ function App() {
           handleBindDevice={handleBindDevice}
           handleRegisterDevice={handleRegisterDevice}
           handleAdminUnbindDevice={handleAdminUnbindDevice}
-          handleVerify={handleVerify}
           newDeviceId={newDeviceId}
           bindAuthToken={bindAuthToken}
           registerDeviceId={registerDeviceId}
           authToken={authToken}
           unbindDeviceId={unbindDeviceId}
           removeDeviceId={removeDeviceId}
-          message={message}
-          signature={signature}
           setNewDeviceId={setNewDeviceId}
           setBindAuthToken={setBindAuthToken}
           setRegisterDeviceId={setRegisterDeviceId}
           setAuthToken={setAuthToken}
           setUnbindDeviceId={setUnbindDeviceId}
           setRemoveDeviceId={setRemoveDeviceId}
-          setMessage={setMessage}
-          setSignature={setSignature}
-          verificationResult={verificationResult}
           error={error}
           contractError={contractError}
         />
       )}
       {activeTab === 'documentation' && <Documentation />}
+      {activeTab === 'verify' && (
+        <VerifySignature
+          message={message}
+          signature={signature}
+          setMessage={setMessage}
+          setSignature={setSignature}
+          handleVerify={handleVerify}
+          verificationResult={verificationResult}
+        />
+      )}
     </div>
   );
   

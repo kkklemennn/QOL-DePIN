@@ -13,140 +13,132 @@ const Main = ({
   handleBindDevice,
   handleRegisterDevice,
   handleAdminUnbindDevice,
-  handleVerify,
   newDeviceId,
   bindAuthToken,
   registerDeviceId,
   authToken,
   unbindDeviceId,
   removeDeviceId,
-  message,
-  signature,
   setNewDeviceId,
   setBindAuthToken,
   setRegisterDeviceId,
   setAuthToken,
   setUnbindDeviceId,
   setRemoveDeviceId,
-  setMessage,
-  setSignature,
-  verificationResult,
   error,
   contractError,
 }) => (
-  <div>
+  <div className="container">
     {account ? (
       <div>
-        <p>Connected Account: {account}</p>
-        <p>Token Balance: {tokenBalance} TOC</p>
+        <p>Connected Account: <strong>{account}</strong></p>
+        <p>Token Balance: <strong>{tokenBalance} TOC</strong></p>
         {ownedDevices.length > 0 && (
           <div>
-            <p>Devices owned by {account}:</p>
-            <ul>
+            <p>Your devices:</p>
+            <ul className="list-group">
               {ownedDevices.map((deviceId, index) => (
-                <li key={index}>
+                <li key={index} className="list-group-item">
                   <p>Device ID: {deviceId}</p>
                   <p>
                     Is Registered: {deviceStatuses[deviceId]?.isRegistered ? 'Yes' : 'No'}
-                    <button onClick={() => handleUnbindDevice(deviceId)}>Unbind</button>
+                    <button className="btn btn-sm btn-danger ml-2" onClick={() => handleUnbindDevice(deviceId)}>Unbind</button>
                   </p>
                   <p>
                     Is Active: {deviceStatuses[deviceId]?.isActive ? 'Yes' : 'No'}
                     {deviceStatuses[deviceId]?.isActive ? (
-                      <button onClick={() => handleSuspendDevice(deviceId)}>Suspend</button>
+                      <button className="btn btn-sm btn-warning ml-2" onClick={() => handleSuspendDevice(deviceId)}>Suspend</button>
                     ) : (
-                      <button onClick={() => handleActivateDevice(deviceId)}>Activate</button>
+                      <button className="btn btn-sm btn-success ml-2" onClick={() => handleActivateDevice(deviceId)}>Activate</button>
                     )}
                   </p>
                   {account === adminAddress && (
-                    <button onClick={() => handleRemoveDevice(deviceId)}>Remove (Admin Feature)</button>
+                    <button className="btn btn-sm btn-danger" onClick={() => handleRemoveDevice(deviceId)}>Remove (Admin Feature)</button>
                   )}
                 </li>
               ))}
             </ul>
           </div>
         )}
-        <div>
-          <input
-            type="text"
-            placeholder="Enter Device ID"
-            value={newDeviceId}
-            onChange={(e) => setNewDeviceId(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Enter Auth Token"
-            value={bindAuthToken}
-            onChange={(e) => setBindAuthToken(e.target.value)}
-          />
-          <button onClick={handleBindDevice}>
-            Bind Device
-          </button>
+        <div className="form-group border p-3 mt-4">
+          <h3>Bind New Device</h3>
+          <div className="row">
+            <div className="col-8">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter Device ID"
+                value={newDeviceId}
+                onChange={(e) => setNewDeviceId(e.target.value)}
+              />
+            </div>
+            <div className="col-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter Auth Token"
+                value={bindAuthToken}
+                onChange={(e) => setBindAuthToken(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="row mt-2">
+            <div className="col-12 text-right">
+              <button className="btn btn-primary" onClick={handleBindDevice}>
+                Bind Device
+              </button>
+            </div>
+          </div>
         </div>
         {account === adminAddress && (
-          <div>
+          <div className="form-group">
             <input
               type="text"
+              className="form-control"
               placeholder="Enter Device ID to Register"
               value={registerDeviceId}
               onChange={(e) => setRegisterDeviceId(e.target.value)}
             />
             <input
               type="text"
+              className="form-control mt-2"
               placeholder="Enter Auth Token"
               value={authToken}
               onChange={(e) => setAuthToken(e.target.value)}
             />
-            <button onClick={handleRegisterDevice}>
+            <button className="btn btn-primary mt-2" onClick={handleRegisterDevice}>
               Register Device (Admin Feature)
             </button>
           </div>
         )}
         {account === adminAddress && (
-          <div>
+          <div className="form-group">
             <input
               type="text"
+              className="form-control"
               placeholder="Enter Device ID to Unbind"
               value={unbindDeviceId}
               onChange={(e) => setUnbindDeviceId(e.target.value)}
             />
-            <button onClick={handleAdminUnbindDevice}>
+            <button className="btn btn-danger mt-2" onClick={handleAdminUnbindDevice}>
               Unbind Device (Admin Feature)
             </button>
           </div>
         )}
         {account === adminAddress && (
-          <div>
+          <div className="form-group">
             <input
               type="text"
+              className="form-control"
               placeholder="Enter Device ID to Remove"
               value={removeDeviceId}
               onChange={(e) => setRemoveDeviceId(e.target.value)}
             />
-            <button onClick={() => handleRemoveDevice(removeDeviceId)}>
+            <button className="btn btn-danger mt-2" onClick={() => handleRemoveDevice(removeDeviceId)}>
               Remove Device (Admin Feature)
             </button>
           </div>
         )}
-        <h2>Verify Signature</h2>
-        <textarea
-          rows="5"
-          cols="50"
-          placeholder="Message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <br />
-        <textarea
-          rows="2"
-          cols="50"
-          placeholder="Signature"
-          value={signature}
-          onChange={(e) => setSignature(e.target.value)}
-        />
-        <br />
-        <button onClick={handleVerify}>Verify</button>
-        <p>{verificationResult}</p>
       </div>
     ) : (
       <div>

@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Documentation = () => (
-  <div>
+  <div className="container">
     <h2>Workflow Documentation</h2>
     <ol>
       <li>Plug in the computer to set WiFi credentials using the serial monitor.</li>
