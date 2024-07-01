@@ -4,26 +4,35 @@
 #include <NTPClient.h>
 #include <ArduinoECCX08.h>
 #include <ArduinoJson.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
 #include "secrets.h"
 
+#define DHTPIN 2     // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT11   // DHT11 - BLUE, DHT22 WHITE
+
 int status = WL_IDLE_STATUS;
-
 const int slot = 1; // private key slot (1 = PEM)
-
 char server[] = "dev.w3bstream.com";
 int port = 8889;
-
 WiFiClient client;
 
 // NTP Client to get the current time
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
+// DHT Sensor
+DHT dht(DHTPIN, DHTTYPE);
+
 void setup() {
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect
   }
+
+  // Initialize the DHT sensor
+  dht.begin();
 
   // Initialize the ECCX08 module
   Serial.println("Initializing ECCX08...");
@@ -79,9 +88,16 @@ void readData(float &temperature, float &humidity, unsigned long &timestamp, Str
   // Get the current Unix timestamp
   timestamp = timeClient.getEpochTime();
 
-  // Dummy sensor data
-  temperature = (float)random(0, 100) / 10.0;
-  humidity = (float)random(0, 100) / 10.0;
+  // Read data from DHT11 sensor
+  humidity = dht.readHumidity();
+  temperature = dht.readTemperature();
+
+  // Check if any reads failed and set values to -1.0 if so
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    humidity = -1.0;
+    temperature = -1.0;
+  }
 
   // Retrieve the public key from slot 1
   byte publicKey[64];
