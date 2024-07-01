@@ -66,22 +66,24 @@ void setup() {
 
   // Initialize the NTP client
   timeClient.begin();
-
-  sendData();
 }
 
 void loop() {
-  // sendData();
-  // delay(60000); // send data every 60 seconds
+  timeClient.update(); // Update the time
+  sendData();
+  delay(20000); // send data every 20 seconds
 }
 
-void readData(float &temperature, float &humidity, unsigned long &timestamp, String &publicKeyHex) {
+void sendData() {
+  // Ensure the NTP client has been updated
+  timeClient.update();
+
   // Get the current Unix timestamp
-  timestamp = timeClient.getEpochTime();
+  unsigned long timestamp = timeClient.getEpochTime();
 
   // Dummy sensor data
-  temperature = (float)random(0, 100) / 10.0;
-  humidity = (float)random(0, 100) / 10.0;
+  float temperature = (float)random(0, 100) / 10.0;
+  float humidity = (float)random(0, 100) / 10.0;
 
   // Retrieve the public key from slot 1
   byte publicKey[64];
@@ -91,14 +93,11 @@ void readData(float &temperature, float &humidity, unsigned long &timestamp, Str
   }
 
   // Convert public key to hex string
-  char publicKeyHexArray[129]; // 64 bytes * 2 chars/byte + 1 null terminator
+  char publicKeyHex[129]; // 64 bytes * 2 chars/byte + 1 null terminator
   for (int i = 0; i < 64; i++) {
-    sprintf(&publicKeyHexArray[i * 2], "%02x", publicKey[i]);
+    sprintf(&publicKeyHex[i * 2], "%02x", publicKey[i]);
   }
-  publicKeyHex = String(publicKeyHexArray);
-}
 
-String constructMessage(float temperature, float humidity, unsigned long timestamp, String publicKeyHex) {
   // Create a JSON object
   StaticJsonDocument<256> jsonDoc;
   jsonDoc["temperature"] = temperature;
@@ -110,14 +109,22 @@ String constructMessage(float temperature, float humidity, unsigned long timesta
   String jsonString;
   serializeJson(jsonDoc, jsonString);
 
-  return jsonString;
-}
-
-String hashAndSign(String jsonString) {
   // Convert JSON string to byte array (UTF-8 encoding)
   int data_len = jsonString.length();
   byte data_bytes[data_len + 1];
   jsonString.getBytes(data_bytes, data_len + 1);
+
+  // Print the JSON string
+  Serial.print("JSON String: ");
+  Serial.println(jsonString);
+
+  // Print the byte array
+  Serial.print("Byte Array: ");
+  for (int i = 0; i < data_len; i++) {
+    Serial.print(data_bytes[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
 
   // Compute SHA-256 hash of the message
   byte *data_ptr = data_bytes;
@@ -131,58 +138,50 @@ String hashAndSign(String jsonString) {
   }
   ECCX08.endSHA256(data_ptr, data_len - nbr_blocks * 64, mySHA);
 
+  Serial.print("SHA result: ");
+  for (int i = 0; i < sizeof(mySHA); i++) {
+    printHex(mySHA[i]);
+  }
+  Serial.println();
+
+  // Print the hash in hexadecimal format
+  Serial.print("Hash (hex): ");
+  for (int i = 0; i < sizeof(mySHA); i++) {
+    if (mySHA[i] < 16) {
+      Serial.print('0');
+    }
+    Serial.print(mySHA[i], HEX);
+  }
+  Serial.println();
+
   // Sign the hash (must be 32 bytes)
   byte signature[64];
   if (!ECCX08.ecSign(slot, mySHA, signature)) {
     Serial.println("Failed to sign the message.");
-    return "";
+    return;
   }
 
-  // Convert signature to hex string
+  // Convert public key and signature to hex strings
+  String public_key_hex = byteArrayToHexString(publicKey, sizeof(publicKey));
   String signature_hex = byteArrayToHexString(signature, sizeof(signature));
-
-  // Print the signature
-  Serial.print("Signature: ");
-  Serial.println(signature_hex);
 
   // Prepare the full payload
   StaticJsonDocument<512> payload;
-  payload["data"] = serialized(jsonString);
+  payload["data"]["temperature"] = temperature;
+  payload["data"]["humidity"] = humidity;
+  payload["data"]["timestamp"] = String(timestamp);
+  payload["data"]["public_key"] = public_key_hex;
   payload["signature"] = signature_hex;
 
   String payload_str;
   serializeJson(payload, payload_str);
-
-  return payload_str;
-}
-
-void sendData() {
-  // Ensure the NTP client has been updated
-  timeClient.update();
-
-  float temperature, humidity;
-  unsigned long timestamp;
-  String publicKeyHex;
-
-  // Read data
-  readData(temperature, humidity, timestamp, publicKeyHex);
-
-  // Construct JSON message
-  String jsonString = constructMessage(temperature, humidity, timestamp, publicKeyHex);
-
-  // Print the JSON string
-  Serial.print("JSON String: ");
-  Serial.println(jsonString);
-
-  // Hash, sign and construct the payload
-  String payload_str = hashAndSign(jsonString);
 
   // DEBUG: Print the payload instead of sending it
   Serial.println("Prepared JSON payload:");
   Serial.println(payload_str);
 
   // Send data to W3bstream
-  // sendToW3bstream(payload_str);
+  sendToW3bstream(payload_str);
 }
 
 void sendToW3bstream(String payload_str) {

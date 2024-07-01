@@ -50,3 +50,20 @@ TODO:
 - attaching location data
 - sending the data also to homeassistant
 - implementing setting up and changing wifi credentials via serial monitor
+
+# Example message JSON
+
+```
+{
+    "data": {
+        "temperature": 62,
+        "humidity": 29,
+        "timestamp": "1719522487",
+        "lat": 46.610244,
+        "lng": 16.2424239,
+        "accuracy": 8744.983998540114
+        "public_key": "cb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237cb013ccb972b9017909a459a3fe65455fa95ee3cea7c6f62a5b77bb1626bacf2"
+    },
+    "signature": "454619efbd4145f110e72f5b4291676c08d5ef3bc54503f6680dba7ec6f6e40d2f7b2c16b9cc42ac510cf94d4b8c1c38f2321f732ca05991e79203439cd429c0"
+}
+```
