@@ -81,7 +81,7 @@ void setup() {
 
 void loop() {
   // sendData();
-  // delay(60000); // send data every 60 seconds
+  // delay(30000); // send data every 30 seconds
 }
 
 void readData(float &temperature, float &humidity, unsigned long &timestamp, String &publicKeyHex) {
@@ -115,10 +115,14 @@ void readData(float &temperature, float &humidity, unsigned long &timestamp, Str
 }
 
 String constructMessage(float temperature, float humidity, unsigned long timestamp, String publicKeyHex) {
+  // Round temperature and humidity to one decimal place and ensure they are floats
+  float roundedTemperature = round(temperature * 10) / 10.0;
+  float roundedHumidity = round(humidity * 10) / 10.0;
+
   // Create a JSON object
   StaticJsonDocument<256> jsonDoc;
-  jsonDoc["temperature"] = temperature;
-  jsonDoc["humidity"] = humidity;
+  jsonDoc["temperature"] = serialized(String(roundedTemperature, 1)); // Ensure one decimal place
+  jsonDoc["humidity"] = serialized(String(roundedHumidity, 1)); // Ensure one decimal place
   jsonDoc["timestamp"] = String(timestamp);
   jsonDoc["public_key"] = publicKeyHex;
 
@@ -223,8 +227,14 @@ void sendToW3bstream(String payload_str) {
       if (client.available()) {
         String line = client.readStringUntil('\r');
         Serial.print(line);
+
+        // Check for end of response
+        if (line == "\n" || line == "\r\n") {
+          break;
+        }
       }
     }
+    Serial.println("Client stopped");
     client.stop();
   } else {
     Serial.println("Connection to server failed.");
