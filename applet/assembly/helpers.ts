@@ -59,3 +59,12 @@ export function getBoolField(jsonObj: JSON.Obj, fieldName: string): bool {
   }
   return false; // Sentinel value for errors or not found
 }
+
+export function getStringAsFloat32Field(jsonObj: JSON.Obj, fieldName: string): f32 {
+  const field = jsonObj.get(fieldName);
+  if (field && field.isString) {
+    let strValue = (field as JSON.Str).valueOf();
+    return parseFloat(strValue) as f32;
+  }
+  return -1.0 as f32; // Sentinel value for errors
+}

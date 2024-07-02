@@ -1,10 +1,10 @@
 import { SendTx, GetDataByRID, JSON, ExecSQL, Log, QuerySQL, ApiCall, GetEnv } from "@w3bstream/wasm-sdk";
-import { String, Bool, Float32 } from "@w3bstream/wasm-sdk/assembly/sql";
+import { String, Bool, Float32, Float64 } from "@w3bstream/wasm-sdk/assembly/sql";
 import { buildTxData } from "./utils/build-tx";
 
 export { alloc } from "@w3bstream/wasm-sdk";
 
-import { validateMsg, getStringField, getBoolField, getFloat32Field } from "./helpers";
+import { validateMsg, getStringField, getBoolField, getStringAsFloat32Field } from "./helpers";
 
 export function start(rid: i32): i32 {
   Log("Hello World!");
@@ -147,6 +147,8 @@ function validateData(message_json: JSON.Obj): boolean {
   if (!(valid = valid && data_json.has("humidity"))) Log("humidity field is missing");
   if (!(valid = valid && data_json.has("timestamp"))) Log("timestamp field is missing");
   if (!(valid = valid && data_json.has("public_key"))) Log("public_key field is missing");
+
+  // For simplicity lat, lon and accuracy can be missing since those are not always critical
 
   return valid as boolean;
 }
@@ -339,10 +341,10 @@ function storeData(message_json: JSON.Obj): i32 {
   let data_json = message_json.get("data") as JSON.Obj;
   
   // Get the temperature
-  let temperature = getFloat32Field(data_json, "temperature");
+  let temperature = getStringAsFloat32Field(data_json, "temperature");
   
   // Get the humidity
-  let humidity = getFloat32Field(data_json, "humidity");
+  let humidity = getStringAsFloat32Field(data_json, "humidity");
   
   // Get the timestamp
   let timestamp = getStringField(data_json, "timestamp");
@@ -350,11 +352,20 @@ function storeData(message_json: JSON.Obj): i32 {
   // Get the public key
   let public_key = getStringField(data_json, "public_key");
 
+  // Get the lat
+  let lat = getStringAsFloat32Field(data_json, "latitude");
+
+  // Get the lon
+  let lon = getStringAsFloat32Field(data_json, "longitude");
+
+  // Get the accuracy
+  let accuracy = getStringAsFloat32Field(data_json, "accuracy");
+
   // Store the data in the W3bstream SQL Database
-  const query = `INSERT INTO "data_table" (public_key,temperature,humidity,timestamp) VALUES (?,?,?,?);`;
+  const query = `INSERT INTO "data_table" (public_key,temperature,humidity,timestamp,lat,lon,accuracy) VALUES (?,?,?,?,?,?,?);`;
   const value = ExecSQL(
       query, 
-      [new String(public_key), new Float32(temperature), new Float32(humidity), new String(timestamp)]);
+      [new String(public_key), new Float32(temperature), new Float32(humidity), new String(timestamp), new Float32(lat), new Float32(lon), new Float32(accuracy)]);
   Log("Query returned: " + value.toString());
 
   return value;
