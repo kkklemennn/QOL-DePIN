@@ -4,26 +4,35 @@
 #include <NTPClient.h>
 #include <ArduinoECCX08.h>
 #include <ArduinoJson.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
 #include "secrets.h"
 
+#define DHTPIN 2     // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT11   // DHT11 - BLUE, DHT22 WHITE
+
 int status = WL_IDLE_STATUS;
-
 const int slot = 1; // private key slot (1 = PEM)
-
 char server[] = "dev.w3bstream.com";
 int port = 8889;
-
 WiFiClient client;
 
 // NTP Client to get the current time
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
+// DHT Sensor
+DHT dht(DHTPIN, DHTTYPE);
+
 void setup() {
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect
   }
+
+  // Initialize the DHT sensor
+  dht.begin();
 
   // Initialize the ECCX08 module
   Serial.println("Initializing ECCX08...");
@@ -66,24 +75,29 @@ void setup() {
 
   // Initialize the NTP client
   timeClient.begin();
+
+  sendData();
 }
 
 void loop() {
-  timeClient.update(); // Update the time
-  sendData();
-  delay(20000); // send data every 20 seconds
+  // sendData();
+  // delay(30000); // send data every 30 seconds
 }
 
-void sendData() {
-  // Ensure the NTP client has been updated
-  timeClient.update();
-
+void readData(float &temperature, float &humidity, unsigned long &timestamp, String &publicKeyHex) {
   // Get the current Unix timestamp
-  unsigned long timestamp = timeClient.getEpochTime();
+  timestamp = timeClient.getEpochTime();
 
-  // Dummy sensor data
-  float temperature = (float)random(0, 100) / 10.0;
-  float humidity = (float)random(0, 100) / 10.0;
+  // Read data from DHT11 sensor
+  humidity = dht.readHumidity();
+  temperature = dht.readTemperature();
+
+  // Check if any reads failed and set values to -1.0 if so
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    humidity = -1.0;
+    temperature = -1.0;
+  }
 
   // Retrieve the public key from slot 1
   byte publicKey[64];
@@ -93,15 +107,22 @@ void sendData() {
   }
 
   // Convert public key to hex string
-  char publicKeyHex[129]; // 64 bytes * 2 chars/byte + 1 null terminator
+  char publicKeyHexArray[129]; // 64 bytes * 2 chars/byte + 1 null terminator
   for (int i = 0; i < 64; i++) {
-    sprintf(&publicKeyHex[i * 2], "%02x", publicKey[i]);
+    sprintf(&publicKeyHexArray[i * 2], "%02x", publicKey[i]);
   }
+  publicKeyHex = String(publicKeyHexArray);
+}
+
+String constructMessage(float temperature, float humidity, unsigned long timestamp, String publicKeyHex) {
+  // Round temperature and humidity to one decimal place and ensure they are floats
+  float roundedTemperature = round(temperature * 10) / 10.0;
+  float roundedHumidity = round(humidity * 10) / 10.0;
 
   // Create a JSON object
   StaticJsonDocument<256> jsonDoc;
-  jsonDoc["temperature"] = temperature;
-  jsonDoc["humidity"] = humidity;
+  jsonDoc["temperature"] = String(roundedTemperature, 1); // Ensure one decimal place
+  jsonDoc["humidity"] = String(roundedHumidity, 1); // Ensure one decimal place
   jsonDoc["timestamp"] = String(timestamp);
   jsonDoc["public_key"] = publicKeyHex;
 
@@ -109,22 +130,14 @@ void sendData() {
   String jsonString;
   serializeJson(jsonDoc, jsonString);
 
+  return jsonString;
+}
+
+String hashAndSign(String jsonString) {
   // Convert JSON string to byte array (UTF-8 encoding)
   int data_len = jsonString.length();
   byte data_bytes[data_len + 1];
   jsonString.getBytes(data_bytes, data_len + 1);
-
-  // Print the JSON string
-  Serial.print("JSON String: ");
-  Serial.println(jsonString);
-
-  // Print the byte array
-  Serial.print("Byte Array: ");
-  for (int i = 0; i < data_len; i++) {
-    Serial.print(data_bytes[i], HEX);
-    Serial.print(" ");
-  }
-  Serial.println();
 
   // Compute SHA-256 hash of the message
   byte *data_ptr = data_bytes;
@@ -138,50 +151,58 @@ void sendData() {
   }
   ECCX08.endSHA256(data_ptr, data_len - nbr_blocks * 64, mySHA);
 
-  Serial.print("SHA result: ");
-  for (int i = 0; i < sizeof(mySHA); i++) {
-    printHex(mySHA[i]);
-  }
-  Serial.println();
-
-  // Print the hash in hexadecimal format
-  Serial.print("Hash (hex): ");
-  for (int i = 0; i < sizeof(mySHA); i++) {
-    if (mySHA[i] < 16) {
-      Serial.print('0');
-    }
-    Serial.print(mySHA[i], HEX);
-  }
-  Serial.println();
-
   // Sign the hash (must be 32 bytes)
   byte signature[64];
   if (!ECCX08.ecSign(slot, mySHA, signature)) {
     Serial.println("Failed to sign the message.");
-    return;
+    return "";
   }
 
-  // Convert public key and signature to hex strings
-  String public_key_hex = byteArrayToHexString(publicKey, sizeof(publicKey));
+  // Convert signature to hex string
   String signature_hex = byteArrayToHexString(signature, sizeof(signature));
+
+  // Print the signature
+  Serial.print("Signature: ");
+  Serial.println(signature_hex);
 
   // Prepare the full payload
   StaticJsonDocument<512> payload;
-  payload["data"]["temperature"] = temperature;
-  payload["data"]["humidity"] = humidity;
-  payload["data"]["timestamp"] = String(timestamp);
-  payload["data"]["public_key"] = public_key_hex;
+  payload["data"] = serialized(jsonString);
   payload["signature"] = signature_hex;
 
   String payload_str;
   serializeJson(payload, payload_str);
+
+  return payload_str;
+}
+
+void sendData() {
+  // Ensure the NTP client has been updated
+  timeClient.update();
+
+  float temperature, humidity;
+  unsigned long timestamp;
+  String publicKeyHex;
+
+  // Read data
+  readData(temperature, humidity, timestamp, publicKeyHex);
+
+  // Construct JSON message
+  String jsonString = constructMessage(temperature, humidity, timestamp, publicKeyHex);
+
+  // Print the JSON string
+  Serial.print("JSON String: ");
+  Serial.println(jsonString);
+
+  // Hash, sign and construct the payload
+  String payload_str = hashAndSign(jsonString);
 
   // DEBUG: Print the payload instead of sending it
   Serial.println("Prepared JSON payload:");
   Serial.println(payload_str);
 
   // Send data to W3bstream
-  sendToW3bstream(payload_str);
+  // sendToW3bstream(payload_str);
 }
 
 void sendToW3bstream(String payload_str) {
@@ -206,8 +227,14 @@ void sendToW3bstream(String payload_str) {
       if (client.available()) {
         String line = client.readStringUntil('\r');
         Serial.print(line);
+
+        // Check for end of response
+        if (line == "\n" || line == "\r\n") {
+          break;
+        }
       }
     }
+    Serial.println("Client stopped");
     client.stop();
   } else {
     Serial.println("Connection to server failed.");
