@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
+#include <WiFiSSLClient.h>
 #include <NTPClient.h>
 #include <ArduinoECCX08.h>
 #include <ArduinoJson.h>
@@ -28,6 +29,10 @@ DHT dht(DHTPIN, DHTTYPE);
 
 unsigned long previousMillis = 0;
 const long interval = 30000; // Interval for sendData (30 seconds)
+
+char API_KEY[] = SECRET_GOOGLE_API;
+const char* apiserver = "www.googleapis.com";
+const int portSSL = 443;
 
 void setup() {
   Serial.begin(9600);
@@ -152,8 +157,8 @@ void handleClient() {
 
             // Create a JSON object
             StaticJsonDocument<200> jsonDoc;
-            jsonDoc["temperature"] = serialized(String(roundedTemperature, 1)); // Ensure one decimal place
-            jsonDoc["humidity"] = serialized(String(roundedHumidity, 1)); // Ensure one decimal place
+            jsonDoc["temperature"] = String(roundedTemperature, 1); // Ensure one decimal place
+            jsonDoc["humidity"] = String(roundedHumidity, 1); // Ensure one decimal place
             String jsonString;
             serializeJson(jsonDoc, jsonString);
 
@@ -230,17 +235,27 @@ void readData(float &temperature, float &humidity, unsigned long &timestamp, Str
   publicKeyHex = String(publicKeyHexArray);
 }
 
-String constructMessage(float temperature, float humidity, unsigned long timestamp, String publicKeyHex) {
+void getLocation(float &latitude, float &longitude, float &accuracy) {
+  String requestBody = scanNetworks();  // Execute the scan function to get the request body
+  ensureConnection();  // Ensure the connection is stable
+  String response = sendDynamicRequest(requestBody);
+  parseResponse(response, latitude, longitude, accuracy);
+}
+
+String constructMessage(float temperature, float humidity, unsigned long timestamp, String publicKeyHex, float latitude, float longitude, float accuracy) {
   // Round temperature and humidity to one decimal place and ensure they are floats
   float roundedTemperature = round(temperature * 10) / 10.0;
   float roundedHumidity = round(humidity * 10) / 10.0;
 
   // Create a JSON object
   StaticJsonDocument<256> jsonDoc;
-  jsonDoc["temperature"] = serialized(String(roundedTemperature, 1)); // Ensure one decimal place
-  jsonDoc["humidity"] = serialized(String(roundedHumidity, 1)); // Ensure one decimal place
+  jsonDoc["temperature"] = String(roundedTemperature, 1); // Ensure one decimal place
+  jsonDoc["humidity"] = String(roundedHumidity, 1); // Ensure one decimal place
   jsonDoc["timestamp"] = String(timestamp);
   jsonDoc["public_key"] = publicKeyHex;
+  jsonDoc["latitude"] = String(latitude, 6); // Ensure six decimal places for latitude
+  jsonDoc["longitude"] = String(longitude, 6); // Ensure six decimal places for longitude
+  jsonDoc["accuracy"] = String(accuracy, 1); // Ensure one decimal place for accuracy
 
   // Convert JSON object to string
   String jsonString;
@@ -303,8 +318,12 @@ void sendData() {
   // Read data
   readData(temperature, humidity, timestamp, publicKeyHex);
 
+  // Get location data
+  float latitude, longitude, accuracy;
+  getLocation(latitude, longitude, accuracy);
+
   // Construct JSON message
-  String jsonString = constructMessage(temperature, humidity, timestamp, publicKeyHex);
+  String jsonString = constructMessage(temperature, humidity, timestamp, publicKeyHex, latitude, longitude, accuracy);
 
   // Print the JSON string
   Serial.print("JSON String: ");
@@ -389,4 +408,157 @@ void printHex(uint8_t num) {
   char hexCar[2];
   sprintf(hexCar, "%02X", num);
   Serial.print(hexCar);
+}
+
+String scanNetworks() {
+  Serial.println("Scanning for networks...");
+  
+  // Scan for Wi-Fi networks
+  int numNetworks = WiFi.scanNetworks();
+  if (numNetworks == -1) {
+    Serial.println("Failed to scan WiFi networks");
+    return "";
+  }
+
+  // Create JSON request payload
+  StaticJsonDocument<1024> doc;
+  JsonArray wifiAccessPoints = doc.createNestedArray("wifiAccessPoints");
+
+  for (int i = 0; i < numNetworks; i++) {
+    uint8_t bssid[6];
+    WiFi.BSSID(i, bssid);
+    JsonObject wifiObject = wifiAccessPoints.createNestedObject();
+    wifiObject["macAddress"] = macToString(bssid);
+    wifiObject["signalStrength"] = WiFi.RSSI(i);
+  }
+
+  String requestBody;
+  serializeJson(doc, requestBody);
+
+  // Print the serialized JSON for debugging
+  Serial.println("Serialized JSON:");
+  Serial.println(requestBody);
+
+  return requestBody;
+}
+
+void ensureConnection() {
+  Serial.println("Ensuring connection is stable...");
+
+  int retryCount = 0;
+  const int maxRetries = 10;
+
+  while (WiFi.status() != WL_CONNECTED && retryCount < maxRetries) {
+    Serial.println("Reconnecting to WiFi...");
+    WiFi.disconnect();
+    WiFi.begin(SECRET_SSID, SECRET_PASS);
+    delay(1000);  // Wait a second before retrying
+    retryCount++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("Connection stable.");
+    printWiFiStatus();
+  } else {
+    Serial.println("Failed to stabilize connection.");
+  }
+}
+
+String sendDynamicRequest(String requestBody) {
+  WiFiSSLClient client;
+  if (!client.connect(apiserver, portSSL)) {
+    Serial.println("Connection to apiserver failed");
+    return "";
+  }
+
+  // Send HTTP POST request
+  client.println("POST /geolocation/v1/geolocate?key=" + String(API_KEY) + " HTTP/1.1");
+  client.println("Host: " + String(apiserver));
+  client.println("Content-Type: application/json");
+  client.println("Connection: close");
+  client.print("Content-Length: ");
+  client.println(requestBody.length());
+  client.println();
+  client.println(requestBody);
+
+  // Print the full request for debugging
+  Serial.println("Full Request:");
+  Serial.print("POST /geolocation/v1/geolocate?key=");
+  Serial.println(String(API_KEY) + " HTTP/1.1");
+  Serial.print("Host: ");
+  Serial.println(String(apiserver));
+  Serial.println("Content-Type: application/json");
+  Serial.println("Connection: close");
+  Serial.print("Content-Length: ");
+  Serial.println(requestBody.length());
+  Serial.println();
+  Serial.println(requestBody);
+
+  // Read response
+  while (client.connected() || client.available()) {
+    if (client.available()) {
+      String line = client.readStringUntil('\n');
+      if (line == "\r") {
+        break;
+      }
+    }
+  }
+
+  String response = "";
+  while (client.available()) {
+    response += client.readString();
+  }
+
+  client.stop();
+
+  // Print response for debugging
+  Serial.println("Response:");
+  Serial.println(response);
+
+  return response;
+}
+
+void parseResponse(String response, float &latitude, float &longitude, float &accuracy) {
+  // Extract JSON part of the response
+  int jsonStartIndex = response.indexOf('{');
+  if (jsonStartIndex == -1) {
+    Serial.println("No JSON found in the response");
+    return;
+  }
+  String jsonResponse = response.substring(jsonStartIndex);
+
+  // Parse response
+  StaticJsonDocument<1024> responseDoc;
+  DeserializationError error = deserializeJson(responseDoc, jsonResponse);
+  if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.f_str());
+    return;
+  }
+
+  latitude = responseDoc["location"]["lat"];
+  longitude = responseDoc["location"]["lng"];
+  accuracy = responseDoc["accuracy"];
+
+  // Print location data
+  Serial.print("Latitude: ");
+  Serial.println(latitude, 7);
+  Serial.print("Longitude: ");
+  Serial.println(longitude, 7);
+  Serial.print("Accuracy: ");
+  Serial.println(accuracy);
+}
+
+String macToString(const uint8_t* mac) {
+  String macStr = "";
+  for (int i = 0; i < 6; ++i) {
+    if (mac[i] < 0x10) {
+      macStr += "0";
+    }
+    macStr += String(mac[i], HEX);
+    if (i < 5) {
+      macStr += ":";
+    }
+  }
+  return macStr;
 }
