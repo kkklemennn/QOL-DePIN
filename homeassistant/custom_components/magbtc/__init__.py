@@ -20,6 +20,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
 
+    # Remove existing panel if it exists
+    hass.components.frontend.async_remove_panel(DOMAIN)
+
     # Set up panel iframe for device manager dashboard
     hass.components.frontend.async_register_built_in_panel(
         "iframe",
@@ -34,4 +37,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     await hass.config_entries.async_forward_entry_unload(entry, "sensor")
+
+    # Remove the panel when the entry is unloaded
+    hass.components.frontend.async_remove_panel(DOMAIN)
+
     return True

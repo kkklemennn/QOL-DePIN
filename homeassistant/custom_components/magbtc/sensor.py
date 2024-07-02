@@ -19,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MagBTC sensor platform."""
     client_ip = config_entry.data["client_ip"]
-    update_interval = timedelta(minutes=2)  # Set the update interval to 2 minutes
+    update_interval = timedelta(minutes=1)  # Set the update interval to 1 minutes
 
     _LOGGER.debug("Setting up sensor with update interval: %s", update_interval)
 

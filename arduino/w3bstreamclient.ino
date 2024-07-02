@@ -17,6 +17,7 @@ const int slot = 1; // private key slot (1 = PEM)
 char server[] = "dev.w3bstream.com";
 int port = 8889;
 WiFiClient client;
+WiFiServer homeAssistantServer(80); // Home Assistant server
 
 // NTP Client to get the current time
 WiFiUDP ntpUDP;
@@ -24,6 +25,9 @@ NTPClient timeClient(ntpUDP);
 
 // DHT Sensor
 DHT dht(DHTPIN, DHTTYPE);
+
+unsigned long previousMillis = 0;
+const long interval = 30000; // Interval for sendData (30 seconds)
 
 void setup() {
   Serial.begin(9600);
@@ -76,12 +80,124 @@ void setup() {
   // Initialize the NTP client
   timeClient.begin();
 
+  // Start the Home Assistant server
+  homeAssistantServer.begin();
+
   sendData();
 }
 
 void loop() {
-  // sendData();
-  // delay(30000); // send data every 30 seconds
+  // Check the server for incoming clients
+  handleClient();
+
+  // Check if it's time to send data
+  // Using millis() handles overflow gracefully due to unsigned arithmetic
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    Serial.println("Sending Data");
+    // sendData();
+  }
+}
+
+void handleClient() {
+  // Listen for incoming clients
+  WiFiClient client = homeAssistantServer.available();
+
+  if (client) {
+    Serial.println("New client");
+    String currentLine = "";
+    String request = "";
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        Serial.write(c);
+        if (c == '\n') {
+          request += currentLine; // Save the request
+          currentLine = ""; // Clear the current line
+        } else if (c != '\r') {
+          currentLine += c;
+        }
+        
+        // If the request is complete, process it
+        if (c == '\n' && currentLine.length() == 0) {
+          Serial.println("Request: " + request);
+          
+          if (request.startsWith("GET /id")) {
+            // Handle the /id endpoint
+            String deviceID = getDeviceID();
+            StaticJsonDocument<200> jsonDoc;
+            jsonDoc["device_id"] = deviceID;
+            String jsonString;
+            serializeJson(jsonDoc, jsonString);
+
+            // Send the response
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type: application/json");
+            client.println();
+            client.print(jsonString);
+            client.println();
+
+            // Print response for debugging
+            Serial.println("Response: " + jsonString);
+          } else {
+            // Handle other endpoints
+            float temperature, humidity;
+            unsigned long timestamp;
+            String publicKeyHex;
+            readData(temperature, humidity, timestamp, publicKeyHex);
+
+            float roundedTemperature = round(temperature * 10) / 10.0;
+            float roundedHumidity = round(humidity * 10) / 10.0;
+
+            // Create a JSON object
+            StaticJsonDocument<200> jsonDoc;
+            jsonDoc["temperature"] = serialized(String(roundedTemperature, 1)); // Ensure one decimal place
+            jsonDoc["humidity"] = serialized(String(roundedHumidity, 1)); // Ensure one decimal place
+            String jsonString;
+            serializeJson(jsonDoc, jsonString);
+
+            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+            // and a content-type so the client knows what's coming, then a blank line:
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type: application/json");
+            client.println();
+
+            // Send the JSON response
+            client.print(jsonString);
+
+            // The HTTP response ends with another blank line:
+            client.println();
+
+            // Print response for debugging
+            Serial.println("Response: " + jsonString);
+          }
+          break;
+        }
+      }
+    }
+    // Ensure the client is disconnected properly
+    client.flush();
+    client.stop();
+    Serial.println("Client Disconnected.");
+  }
+}
+
+// Function to get the first 64 characters of the public key from slot 1 of ECC
+String getDeviceID() {
+  uint8_t publicKey[64];
+  ECCX08.begin();
+  if (!ECCX08.generatePublicKey(slot, publicKey)) {
+    Serial.println("Failed to get public key");
+    return "";
+  }
+  String deviceID = "0x";
+  for (int i = 0; i < 32; i++) {  // First 64 characters
+    char hex[3];
+    sprintf(hex, "%02X", publicKey[i]);
+    deviceID += hex;
+  }
+  return deviceID;
 }
 
 void readData(float &temperature, float &humidity, unsigned long &timestamp, String &publicKeyHex) {
