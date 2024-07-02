@@ -181,11 +181,12 @@ export function handle_process_rewards(rid: i32): i32 {
   // Parse the data message into a JSON object
   let message_json = JSON.parse(message_string) as JSON.Obj;
 
-  // Get the public key from the message
+  // Get the public key from the message and convert it to device_id
   let data_json = message_json.get("data") as JSON.Obj;
   let public_key = getStringField(data_json, "public_key");
+  let device_id = publicKeyToDeviceId(public_key);
   // Get the latest IoT data point sent by the device
-  let sql = "SELECT public_key,temperature,humidity FROM data_table WHERE public_key = '"+public_key+"' ORDER BY id DESC LIMIT 1";
+  let sql = "SELECT device_id,temperature,humidity FROM data_table WHERE device_id = '"+device_id+"' ORDER BY id DESC LIMIT 1";
   let result = QuerySQL(sql);
   let result_json = JSON.parse(result) as JSON.Obj;
   if (result_json == null) {
@@ -351,6 +352,7 @@ function storeData(message_json: JSON.Obj): i32 {
 
   // Get the public key
   let public_key = getStringField(data_json, "public_key");
+  let deviceId = publicKeyToDeviceId(public_key);
 
   // Get the lat
   let lat = getStringAsFloat32Field(data_json, "latitude");
@@ -362,10 +364,10 @@ function storeData(message_json: JSON.Obj): i32 {
   let accuracy = getStringAsFloat32Field(data_json, "accuracy");
 
   // Store the data in the W3bstream SQL Database
-  const query = `INSERT INTO "data_table" (public_key,temperature,humidity,timestamp,lat,lon,accuracy) VALUES (?,?,?,?,?,?,?);`;
+  const query = `INSERT INTO "data_table" (device_id,temperature,humidity,timestamp,lat,lon,accuracy) VALUES (?,?,?,?,?,?,?);`;
   const value = ExecSQL(
       query, 
-      [new String(public_key), new Float32(temperature), new Float32(humidity), new String(timestamp), new Float32(lat), new Float32(lon), new Float32(accuracy)]);
+      [new String(deviceId), new Float32(temperature), new Float32(humidity), new String(timestamp), new Float32(lat), new Float32(lon), new Float32(accuracy)]);
   Log("Query returned: " + value.toString());
 
   return value;
