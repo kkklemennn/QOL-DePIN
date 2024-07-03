@@ -13,5 +13,4 @@ This JSON file contains the configuration for the W3bstream project, including:
 - contract logs
 - event routing
 
-
-TODO: Update both files (export project)
+Note: `API_VERIFY_URL` is hidden.

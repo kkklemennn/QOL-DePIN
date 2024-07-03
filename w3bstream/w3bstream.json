@@ -45,6 +45,94 @@
 						"relationships": []
 					},
 					{
+						"tableName": "data_table",
+						"tableSchema": "public",
+						"comment": "",
+						"columns": [
+							{
+								"name": "lat",
+								"type": "float8",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": true,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							},
+							{
+								"name": "lon",
+								"type": "float8",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": true,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							},
+							{
+								"name": "accuracy",
+								"type": "float8",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": true,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							},
+							{
+								"name": "device_id",
+								"type": "text",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": false,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							},
+							{
+								"name": "id",
+								"type": "int8",
+								"defaultValue": null,
+								"isIdentity": true,
+								"isNullable": false,
+								"isUnique": false,
+								"isPrimaryKey": true,
+								"comment": null
+							},
+							{
+								"name": "timestamp",
+								"type": "text",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": true,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							},
+							{
+								"name": "temperature",
+								"type": "float4",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": true,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							},
+							{
+								"name": "humidity",
+								"type": "float4",
+								"defaultValue": null,
+								"isIdentity": false,
+								"isNullable": true,
+								"isUnique": false,
+								"isPrimaryKey": false,
+								"comment": null
+							}
+						],
+						"relationships": []
+					},
+					{
 						"tableName": "devices_registry",
 						"tableSchema": "public",
 						"comment": "",
@@ -91,111 +179,68 @@
 							}
 						],
 						"relationships": []
-					},
-					{
-						"tableName": "data_table",
-						"tableSchema": "public",
-						"comment": "",
-						"columns": [
-							{
-								"name": "id",
-								"type": "int8",
-								"defaultValue": null,
-								"isIdentity": true,
-								"isNullable": false,
-								"isUnique": false,
-								"isPrimaryKey": true,
-								"comment": null
-							},
-							{
-								"name": "public_key",
-								"type": "text",
-								"defaultValue": null,
-								"isIdentity": false,
-								"isNullable": false,
-								"isUnique": false,
-								"isPrimaryKey": false,
-								"comment": null
-							},
-							{
-								"name": "sensor_reading",
-								"type": "text",
-								"defaultValue": null,
-								"isIdentity": false,
-								"isNullable": true,
-								"isUnique": false,
-								"isPrimaryKey": false,
-								"comment": null
-							},
-							{
-								"name": "timestamp",
-								"type": "text",
-								"defaultValue": null,
-								"isIdentity": false,
-								"isNullable": true,
-								"isUnique": false,
-								"isPrimaryKey": false,
-								"comment": null
-							}
-						],
-						"relationships": []
 					}
 				]
 			}
 		]
 	},
 	"envs": {
-		"env": null
+		"env": [
+			[
+				"API_VERIFY_URL",
+				"http://<API_IP:PORT>/verify"
+			]
+		]
 	},
 	"cronJob": [],
 	"contractLog": [
 		{
-			"eventType": "DEVICE_UNBINDING",
-			"chainID": 4690,
-			"contractAddress": "0x06735BECaC4805e02da41ae1402fC3d11d3fbff9",
-			"blockStart": 25432496,
-			"blockEnd": 0,
-			"topic0": "0x082a52a4b0a06e3d96ce6f09c7d65257ff67f267c0f7f536943eefdeeb28febb"
-		},
-		{
-			"eventType": "DEVICE_BINDING",
-			"chainID": 4690,
-			"contractAddress": "0x06735BECaC4805e02da41ae1402fC3d11d3fbff9",
-			"blockStart": 25432496,
-			"blockEnd": 0,
-			"topic0": "0x79e9049c280370b9eda34d20f57456b7dcc94e83ac839777f71209901f780f48"
-		},
-		{
 			"eventType": "DEVICE_REGISTER",
 			"chainID": 4690,
-			"contractAddress": "0x3Dc485d4AB966f7e526D679A9aF44F1be4a04c23",
-			"blockStart": 25432496,
+			"contractAddress": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+			"blockStart": 26832435,
 			"blockEnd": 0,
 			"topic0": "0x543b01d8fc03bd0f400fb055a7c379dc964b3c478f922bb2e198fa9bccb8e714"
 		},
 		{
-			"eventType": "DEVICE_SUSPEND",
-			"chainID": 4690,
-			"contractAddress": "0x3Dc485d4AB966f7e526D679A9aF44F1be4a04c23",
-			"blockStart": 25432496,
-			"blockEnd": 0,
-			"topic0": "0xa947cf0c91ed1ea7709488fa092d67427ecbacfb336c838cac9a8895fd4d5ee9"
-		},
-		{
 			"eventType": "DEVICE_ACTIVATE",
 			"chainID": 4690,
-			"contractAddress": "0x3Dc485d4AB966f7e526D679A9aF44F1be4a04c23",
-			"blockStart": 25432496,
+			"contractAddress": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+			"blockStart": 26832435,
 			"blockEnd": 0,
 			"topic0": "0xf88d777bd2714787b6f9dc2fd4b7ed3f966999c3dd99710e89a7c625921a0986"
 		},
 		{
 			"eventType": "DEVICE_REMOVE",
 			"chainID": 4690,
-			"contractAddress": "0x3Dc485d4AB966f7e526D679A9aF44F1be4a04c23",
-			"blockStart": 25432496,
+			"contractAddress": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+			"blockStart": 26832435,
 			"blockEnd": 0,
-			"topic0": "0x3a6e62966ff07d63ee4dde9094c291edbd617f32e3a0d8721e9c7703c80e2b86"
+			"topic0": "0xa7484d3d596d311cfc3107dcff9228ce00f3d751f41579c18250db44bba095ff"
+		},
+		{
+			"eventType": "DEVICE_UNBINDING",
+			"chainID": 4690,
+			"contractAddress": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+			"blockStart": 26832435,
+			"blockEnd": 0,
+			"topic0": "0x082a52a4b0a06e3d96ce6f09c7d65257ff67f267c0f7f536943eefdeeb28febb"
+		},
+		{
+			"eventType": "DEVICE_BINDING",
+			"chainID": 4690,
+			"contractAddress": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+			"blockStart": 26832435,
+			"blockEnd": 0,
+			"topic0": "0x79e9049c280370b9eda34d20f57456b7dcc94e83ac839777f71209901f780f48"
+		},
+		{
+			"eventType": "DEVICE_SUSPEND",
+			"chainID": 4690,
+			"contractAddress": "0x44a6F4B15211A8988c84916b91D9D6a4c08231f9",
+			"blockStart": 26832435,
+			"blockEnd": 0,
+			"topic0": "0xa947cf0c91ed1ea7709488fa092d67427ecbacfb336c838cac9a8895fd4d5ee9"
 		}
 	],
 	"chainHeight": [],
