@@ -6,8 +6,8 @@
 // Include your Wi-Fi credentials
 #include "secrets.h"
 
-char ssid[] = SECRET_SSID;    // your network SSID (name)
-char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
+char ssid[] = SECRET_SSID;
+char pass[] = SECRET_PASS;
 
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
@@ -45,7 +45,6 @@ void setup() {
   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
 
     // wait 10 seconds for connection:
@@ -108,8 +107,8 @@ void loop() {
             String jsonString;
             serializeJson(jsonDoc, jsonString);
 
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
+            // Generate "HTTP/1.1 200 OK" response
+            // Structure: Response headers, content-type, blank line
             client.println("HTTP/1.1 200 OK");
             client.println("Content-type: application/json");
             client.println();
@@ -117,7 +116,7 @@ void loop() {
             // Send the JSON response
             client.print(jsonString);
 
-            // The HTTP response ends with another blank line:
+            // The HTTP response ends with another blank line
             client.println();
           }
           break;
@@ -130,16 +129,13 @@ void loop() {
 }
 
 void printWiFiStatus() {
-  // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
 
-  // print your board's IP address:
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
 
-  // print the received signal strength:
   long rssi = WiFi.RSSI();
   Serial.print("signal strength (RSSI):");
   Serial.print(rssi);

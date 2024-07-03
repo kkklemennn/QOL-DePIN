@@ -161,8 +161,8 @@ void handleClient() {
             String jsonString;
             serializeJson(jsonDoc, jsonString);
 
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
+            // Generate "HTTP/1.1 200 OK" response
+            // Structure: Response headers, content-type, blank line
             client.println("HTTP/1.1 200 OK");
             client.println("Content-type: application/json");
             client.println();
@@ -383,16 +383,13 @@ void sendToW3bstream(String payload_str) {
 
 // Prints the current WiFi status to the Serial monitor
 void printWiFiStatus() {
-  // Print the SSID of the network you're connected to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
 
-  // Print your board's IP address:
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
 
-  // Print the received signal strength:
   long rssi = WiFi.RSSI();
   Serial.print("Signal strength (RSSI):");
   Serial.print(rssi);

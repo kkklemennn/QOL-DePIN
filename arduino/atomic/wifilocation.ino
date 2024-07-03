@@ -5,8 +5,8 @@
 // Include your Wi-Fi credentials
 #include "secrets.h"
 
-char ssid[] = SECRET_SSID;    // your network SSID (name)
-char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
+char ssid[] = SECRET_SSID;
+char pass[] = SECRET_PASS;
 char API_KEY[] = SECRET_GOOGLE_API;
 const char* apiserver = "www.googleapis.com";
 const int port = 443;
@@ -29,7 +29,6 @@ void setup() {
   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
 
     // wait 10 seconds for connection:
@@ -46,20 +45,17 @@ void setup() {
 }
 
 void loop() {
-  // listen for incoming clients
+  // pass
 }
 
 void printWiFiStatus() {
-  // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
 
-  // print your board's IP address:
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
 
-  // print the received signal strength:
   long rssi = WiFi.RSSI();
   Serial.print("signal strength (RSSI):");
   Serial.print(rssi);

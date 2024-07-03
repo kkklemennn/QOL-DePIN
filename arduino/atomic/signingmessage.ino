@@ -82,7 +82,7 @@ void setup() {
   }
   Serial.println();
 
-  // Print the hash in hexadecimal format
+  // Print the hash in hex format
   Serial.print("Hash (hex): ");
   for (int i = 0; i < sizeof(mySHA); i++) {
     if (mySHA[i] < 16) {
@@ -126,7 +126,7 @@ void setup() {
 }
 
 void loop() {
-  // Nothing to do here
+  // pass
 }
 
 void printHex(uint8_t num) {

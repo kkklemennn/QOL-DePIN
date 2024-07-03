@@ -16,6 +16,7 @@ Arduino code for testing setting up the wifi credentials via serial port.
 Needed when the new device is shipped so that the end user can plug it in the computer and input own wifi ssid and password in order for the device to connect to it.
 It is implemented so that it listens for `resetwifi` string on serial monitor, if it gets it, it prompts you to input the new ssid and password
 It then saves those values in FLASH memory so a user does not need to do this step each time the device reboots.
+
 Note: since this is an open-source project, users can simply download the production arduino code `w3bstreamclient.ino` and input their own wifi info in `secrets.h`.
 
 ## signingmessage.ino

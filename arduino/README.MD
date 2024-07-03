@@ -21,20 +21,18 @@ Is the "production" code of the device. Basically all the components that we tes
 - Every 2 hours a signed message is sent to W3bstream
     -   On W3bstream a wasm applet is running, which is handling everything else (see documentation here).
 
-# Example message JSON
-TODO: Signed example message which does not doxx
-
+## Example message JSON
 ```
 {
     "data": {
-        "temperature": 62,
-        "humidity": 29,
-        "timestamp": "1719522487",
-        "lat": 46.610244,
-        "lng": 16.2424239,
-        "accuracy": 8744.983998540114
-        "public_key": "cb29cf6593c4cf2d1249d2c8cce1456076948830c55c8a29b3925e305bca8237cb013ccb972b9017909a459a3fe65455fa95ee3cea7c6f62a5b77bb1626bacf2"
+        "temperature": "25.8",
+        "humidity": "48.0",
+        "timestamp": "1720047574",
+        "public_key": "cc6d788fc040dfa2987d69a8c2f78ac70e06b0b747003f8158db146104eb894f6b75aa1531e1b813148ebdf1e0db3af409c8b1d7eb8b1c6c23c6b61ef75e262b",
+        "latitude": "46.050030",
+        "longitude": "14.468389",
+        "accuracy": "9.0"
     },
-    "signature": "454619efbd4145f110e72f5b4291676c08d5ef3bc54503f6680dba7ec6f6e40d2f7b2c16b9cc42ac510cf94d4b8c1c38f2321f732ca05991e79203439cd429c0"
+    "signature": "0e11bcc3c81d9a1453cf994074e4bd8de69c8f878df1b0a4fb59688a7cba46fe75d9f76183713f20e95a2571c0f0690c0210e35148c14f7f62a5e0b9fb6627ae"
 }
 ```

@@ -48,7 +48,6 @@ void setup() {
 }
 
 void loop() {
-    // Main loop
     checkForResetCommand();
 }
 

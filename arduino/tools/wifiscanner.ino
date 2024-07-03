@@ -19,12 +19,6 @@ void setup() {
     while (1);
   }
 
-  // Print firmware version
-  String fv = WiFi.firmwareVersion();
-  if (fv < "1.0.0") {
-    Serial.println("Please upgrade the firmware");
-  }
-
   // Scan for available networks
   scanNetworks();
 
@@ -33,7 +27,7 @@ void setup() {
 }
 
 void loop() {
-  // Nothing to do here
+  // pass
 }
 
 void scanNetworks() {
@@ -111,16 +105,13 @@ void printWiFiStatus() {
       break;
   }
 
-  // Print the SSID of the network you're connected to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
 
-  // Print your board's IP address:
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
 
-  // Print the received signal strength:
   long rssi = WiFi.RSSI();
   Serial.print("Signal strength (RSSI):");
   Serial.print(rssi);

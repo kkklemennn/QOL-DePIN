@@ -18,8 +18,9 @@ void loop() {
   // Wait a few seconds between measurements
   delay(2000);
 
+  // Note:
   // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+  // Sensor readings may also be up to 2 seconds 'old'
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
 
