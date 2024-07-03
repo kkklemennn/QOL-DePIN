@@ -118,7 +118,6 @@ describe("DevicesRegistry", function () {
     await expect(devicesRegistry.connect(user).removeDevice(DEVICE_ID_1)).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
-  // New test cases
   it("Should have correct initial states after device is registered", async function () {
     await devicesRegistry.registerDevice(DEVICE_ID_1, AUTH_TOKEN_1);
     const device = await devicesRegistry.devices(DEVICE_ID_1);

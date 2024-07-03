@@ -27,8 +27,9 @@ NTPClient timeClient(ntpUDP);
 // DHT Sensor
 DHT dht(DHTPIN, DHTTYPE);
 
+// Used in loop() function to set up interval for sendin to w3bstream
 unsigned long previousMillis = 0;
-const long interval = 30000; // Interval for sendData (30 seconds)
+const long interval = 2 * 60 * 60 * 1000; // Interval for sendData (2 hours)
 
 char API_KEY[] = SECRET_GOOGLE_API;
 const char* apiserver = "www.googleapis.com";
@@ -87,8 +88,6 @@ void setup() {
 
   // Start the Home Assistant server
   homeAssistantServer.begin();
-
-  sendData();
 }
 
 void loop() {
@@ -96,15 +95,15 @@ void loop() {
   handleClient();
 
   // Check if it's time to send data
-  // Using millis() handles overflow gracefully due to unsigned arithmetic
+  // Using millis() handles overflow due to unsigned arithmetic
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    Serial.println("Sending Data");
-    // sendData();
+    sendData();
   }
 }
 
+// Handles incoming client requests from HomeAssistant server
 void handleClient() {
   // Listen for incoming clients
   WiFiClient client = homeAssistantServer.available();
@@ -205,6 +204,7 @@ String getDeviceID() {
   return deviceID;
 }
 
+// Reads temperature and humidity data from the DHT sensor
 void readData(float &temperature, float &humidity, unsigned long &timestamp, String &publicKeyHex) {
   // Get the current Unix timestamp
   timestamp = timeClient.getEpochTime();
@@ -235,6 +235,7 @@ void readData(float &temperature, float &humidity, unsigned long &timestamp, Str
   publicKeyHex = String(publicKeyHexArray);
 }
 
+// Gets the device's geographical location
 void getLocation(float &latitude, float &longitude, float &accuracy) {
   String requestBody = scanNetworks();  // Execute the scan function to get the request body
   ensureConnection();  // Ensure the connection is stable
@@ -242,6 +243,7 @@ void getLocation(float &latitude, float &longitude, float &accuracy) {
   parseResponse(response, latitude, longitude, accuracy);
 }
 
+// Constructs a JSON message with sensor data and location information
 String constructMessage(float temperature, float humidity, unsigned long timestamp, String publicKeyHex, float latitude, float longitude, float accuracy) {
   // Round temperature and humidity to one decimal place and ensure they are floats
   float roundedTemperature = round(temperature * 10) / 10.0;
@@ -264,6 +266,7 @@ String constructMessage(float temperature, float humidity, unsigned long timesta
   return jsonString;
 }
 
+// Computes the SHA-256 hash of the JSON string and signs it
 String hashAndSign(String jsonString) {
   // Convert JSON string to byte array (UTF-8 encoding)
   int data_len = jsonString.length();
@@ -307,6 +310,7 @@ String hashAndSign(String jsonString) {
   return payload_str;
 }
 
+// Prepares the data and sends it to W3bstream
 void sendData() {
   // Ensure the NTP client has been updated
   timeClient.update();
@@ -337,9 +341,10 @@ void sendData() {
   Serial.println(payload_str);
 
   // Send data to W3bstream
-  // sendToW3bstream(payload_str);
+  sendToW3bstream(payload_str);
 }
 
+// Sends the constructed payload to the W3bstream server
 void sendToW3bstream(String payload_str) {
   if (client.connect(server, port)) {
     client.print("POST /srv-applet-mgr/v0/event/");
@@ -376,6 +381,7 @@ void sendToW3bstream(String payload_str) {
   }
 }
 
+// Prints the current WiFi status to the Serial monitor
 void printWiFiStatus() {
   // Print the SSID of the network you're connected to:
   Serial.print("SSID: ");
@@ -393,6 +399,7 @@ void printWiFiStatus() {
   Serial.println(" dBm");
 }
 
+// Converts a byte array to a hexadecimal string
 String byteArrayToHexString(byte *buffer, int length) {
   String hexString = "";
   for (int i = 0; i < length; i++) {
@@ -404,12 +411,14 @@ String byteArrayToHexString(byte *buffer, int length) {
   return hexString;
 }
 
+// Prints hexadecimal string to Serial Monitor
 void printHex(uint8_t num) {
   char hexCar[2];
   sprintf(hexCar, "%02X", num);
   Serial.print(hexCar);
 }
 
+// Scans for available Wi-Fi networks and constructs a request payload
 String scanNetworks() {
   Serial.println("Scanning for networks...");
   
@@ -442,6 +451,7 @@ String scanNetworks() {
   return requestBody;
 }
 
+// Ensures the WiFi connection is stable and reconnects if necessary
 void ensureConnection() {
   Serial.println("Ensuring connection is stable...");
 
@@ -464,6 +474,7 @@ void ensureConnection() {
   }
 }
 
+// Sends a HTTP request to Google geolocation API with the network scan results
 String sendDynamicRequest(String requestBody) {
   WiFiSSLClient client;
   if (!client.connect(apiserver, portSSL)) {
@@ -518,6 +529,7 @@ String sendDynamicRequest(String requestBody) {
   return response;
 }
 
+// Parses the response from the Google geolocation API to extract location data
 void parseResponse(String response, float &latitude, float &longitude, float &accuracy) {
   // Extract JSON part of the response
   int jsonStartIndex = response.indexOf('{');
@@ -539,16 +551,9 @@ void parseResponse(String response, float &latitude, float &longitude, float &ac
   latitude = responseDoc["location"]["lat"];
   longitude = responseDoc["location"]["lng"];
   accuracy = responseDoc["accuracy"];
-
-  // Print location data
-  Serial.print("Latitude: ");
-  Serial.println(latitude, 7);
-  Serial.print("Longitude: ");
-  Serial.println(longitude, 7);
-  Serial.print("Accuracy: ");
-  Serial.println(accuracy);
 }
 
+// Converts a MAC address to a human-readable string format
 String macToString(const uint8_t* mac) {
   String macStr = "";
   for (int i = 0; i < 6; ++i) {

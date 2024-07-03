@@ -1,3 +1,26 @@
-CREATE TABLE `device_registry`. (`device_id` TEXT NOT NULL ,`is_active` TEXT NOT NULL );
-INSERT INTO "device_registry" (device_id, is_registered, is_active) VALUES (?,?,?);
-INSERT INTO "device_bindings" (device_id, owner_address) VALUES (?,?);
+
+CREATE TABLE devices_binding (
+    id BIGINT,
+    device_id TEXT,
+    owner_address TEXT
+);
+
+
+CREATE TABLE data_table (
+    id BIGINT,
+    device_id TEXT,
+    timestamp TEXT,
+    temperature REAL,
+    humidity REAL,
+    lat DOUBLE PRECISION,
+    lon DOUBLE PRECISION,
+    accuracy DOUBLE PRECISION
+);
+
+
+CREATE TABLE devices_registry (
+    id BIGINT,
+    device_id TEXT,
+    is_registered BOOLEAN,
+    is_active BOOLEAN
+);

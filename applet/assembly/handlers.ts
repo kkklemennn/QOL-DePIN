@@ -6,6 +6,7 @@ export { alloc } from "@w3bstream/wasm-sdk";
 
 import { validateMsg, getStringField, getBoolField, getStringAsFloat32Field } from "./helpers";
 
+// Logs a hello world message and validates the device message
 export function start(rid: i32): i32 {
   Log("Hello World!");
 
@@ -17,6 +18,7 @@ export function start(rid: i32): i32 {
   return 0;
 }
 
+// Handles device registration events and stores the device information in the database
 export function handle_device_registered(rid: i32): i32 {
   Log("New Device Registered Detected: ");
   let message_string = GetDataByRID(rid);
@@ -31,6 +33,7 @@ export function handle_device_registered(rid: i32): i32 {
   return 0;
 }
 
+// Handles device removal events and deletes the device information from the database
 export function handle_device_removed(rid: i32): i32 {
   Log("Device Removal Detected: ");
   let message_string = GetDataByRID(rid);
@@ -47,6 +50,7 @@ export function handle_device_removed(rid: i32): i32 {
   return 0;
 }
 
+// Handles device suspension events and updates the device status to inactive in the database
 export function handle_device_suspended(rid: i32): i32 {
   Log("Device Suspension Detected: ");
   let message_string = GetDataByRID(rid);
@@ -62,6 +66,7 @@ export function handle_device_suspended(rid: i32): i32 {
   return 0;
 }
 
+// Handles device activation events and updates the device status to active in the database
 export function handle_device_activated(rid: i32): i32 {
   Log("Device Activation Detected: ");
   let message_string = GetDataByRID(rid);
@@ -77,6 +82,7 @@ export function handle_device_activated(rid: i32): i32 {
   return 0;
 }
 
+// Handles device binding events and stores the information of device_id and its owner in the database
 export function handle_device_binding(rid: i32): i32 {
   Log("New Device Binding Detected: ");
   let message_string = GetDataByRID(rid);
@@ -95,6 +101,7 @@ export function handle_device_binding(rid: i32): i32 {
   return 0;
 }
 
+// Handles device unbinding events and removes the binding information from the database
 export function handle_device_unbinding(rid: i32): i32 {
   Log("Device Unbinding Detected: ");
   let message_string = GetDataByRID(rid);
@@ -111,30 +118,23 @@ export function handle_device_unbinding(rid: i32): i32 {
   return 0;
 }
 
-// This handler will be executed each time a new data message 
-// is sent to our W3bstream project
+// Executed each time a new data message is sent to our W3bstream project
+// Processes incoming data messages, validates and stores data, and triggers reward distribution
 export function handle_data(rid: i32): i32 {
   Log("New data message received");
-  // Get the device data message from the W3bstream host
+
   let message_string = GetDataByRID(rid);
-  // Parse the data message into a JSON object
   let message_json = JSON.parse(message_string) as JSON.Obj;
-  // validate fields
   assert(validateData(message_json), "Message fields are not valid");
-  // Verify device signature
   assert(validateDeviceIdentity(message_json),"Device identity validation failed");
-  // make sure the device has an owner assigned
   let owner = get_device_owner(message_json);
   assert(owner != "0x0000000000000000000000000000000000000000","No owner assigned for device");
-  // Store the IoT data along with the device id 
   storeData(message_json);
 
-  // For simplicity, let's evaluate rewards here (however, a dedicated
-  // message should be sent periodically!)
-  // return 0
   return handle_process_rewards(rid);
 }
 
+// Validates the structure and fields of the incoming data message
 function validateData(message_json: JSON.Obj): boolean { 
   Log("Validating data message:\n" + message_json.toString())
   let valid: bool = true;
@@ -142,6 +142,7 @@ function validateData(message_json: JSON.Obj): boolean {
   if (!(valid = valid && message_json.has("signature"))) Log("device_signature field is missing");
   if (!(valid = valid && message_json.has("data"))) Log("data field is missing");
   
+  // Validate the data fields inside the message
   let data_json = message_json.get("data") as JSON.Obj;
   if (!(valid = valid && data_json.has("temperature"))) Log("temperature field is missing");
   if (!(valid = valid && data_json.has("humidity"))) Log("humidity field is missing");
@@ -171,21 +172,16 @@ function get_device_owner(message_json: JSON.Obj): string {
   return (owner);
 }
 
-// Simply rewards the most recent data message in the DB  
-// but more complex logic could be implemented here
+// Rewards the owner of the sent data with 3 TOC tokens  
 export function handle_process_rewards(rid: i32): i32 {
   Log("Processing rewards");
 
-  // Get the device data message from the W3bstream host
   let message_string = GetDataByRID(rid);
-  // Parse the data message into a JSON object
   let message_json = JSON.parse(message_string) as JSON.Obj;
 
-  // Get the public key from the message and convert it to device_id
   let data_json = message_json.get("data") as JSON.Obj;
   let public_key = getStringField(data_json, "public_key");
   let device_id = publicKeyToDeviceId(public_key);
-  // Get the latest IoT data point sent by the device
   let sql = "SELECT device_id,temperature,humidity FROM data_table WHERE device_id = '"+device_id+"' ORDER BY id DESC LIMIT 1";
   let result = QuerySQL(sql);
   let result_json = JSON.parse(result) as JSON.Obj;
@@ -193,7 +189,7 @@ export function handle_process_rewards(rid: i32): i32 {
     Log("No data found for device ")
     return 1;
   }
-  // Get the power consumption
+
   let owner = get_device_owner(message_json);
   Log("Rewarding " + owner + " with 3 Tokens...");
   let tx_hash = mintRewards(owner, 4);
@@ -206,6 +202,7 @@ export function handle_process_rewards(rid: i32): i32 {
   return 0;
 }
 
+// Mints the ERC20 reward tokens and sends them to the address of the contributor
 export function mintRewards(toAddress: string, amountToMint: u64): string {
   const MINT_FUNCTION_SIGNATURE = "40c10f19";  // keccak256 hash of the function signature "mint(address,uint256)"
   const chainId = 4690;
@@ -238,71 +235,58 @@ function publicKeyToDeviceId(public_key: string): string {
   return "0x" + public_key.slice(0, 64);
 }
 
-// // Verify that the device public key is authorized
+// Verify that the device public key is active
 function auth_device(message_json: JSON.Obj): bool {
   Log("Authenticating device public key from DB...");
-  
-  // Get the public key from the message
 
-  // Get the public key from the message
   let data_json = message_json.get("data") as JSON.Obj;
   let public_key = getStringField(data_json, "public_key");
-  
-  // Get the device id from the message
   let device_id = publicKeyToDeviceId(public_key);
   
-  // Execute the SQL query to get the device status
   let sql = "SELECT is_active FROM devices_registry WHERE device_id = '" + device_id + "'";
   let result = QuerySQL(sql);
   assert(result != "", "Device is not registered");
 
-  // Log the raw result for debugging
   Log("Raw SQL query result: " + result);
 
-  // Parse the result and ensure it's a JSON object
   let parsed_result = JSON.parse(result);
   assert(parsed_result.isObj, "Expected result to be a JSON object");
   let result_json = parsed_result as JSON.Obj;
   
-  // Get the is_active field
   let is_active_value = result_json.get("is_active");
   assert(is_active_value != null && is_active_value.isBool, "is_active field is missing or not a boolean in the query result");
 
-  // Convert is_active_value to Bool and then get its value
   let is_active = (is_active_value as JSON.Bool).valueOf();
   
   if (is_active) {
-    Log("Device is authorized");
+    Log("Device is active");
   } else {
-    Log("Device is banned");
+    Log("Device is not active");
   }
 
   return is_active;
 }
 
-// // Verify that the message signature is correct and the device public key is authorized
+// // Verify that the message signature is correct and the device public key is active
 function validateDeviceIdentity(message_json: JSON.Obj): bool {
   Log("Validating device identity");
 
-  // Verify that the device public key is authorized in the contract
   let authorized = auth_device(message_json);
   if (!authorized) {
     Log("Device authentication failed");
     return false;
   }
 
-  // Get the data object
   let data: JSON.Obj | null = message_json.getObj("data");
   if (data == null) return false;
 
-  // Get the signature from the message
   let signature = getStringField(message_json, "signature");
 
-  // Validate the signature
   let validSignature = validateSignature(data, signature);
   return validSignature;
 }
 
+// Validates the signature of received message to insure integirty
 function validateSignature(data: JSON.Obj, signature: string): bool {
   // Get the API URL from the environment variable
   let apiUrl = GetEnv("API_VERIFY_URL");
@@ -336,6 +320,7 @@ function validateSignature(data: JSON.Obj, signature: string): bool {
   return isValid;
 }
 
+// Stores the data in the W3bstream SQL DB
 function storeData(message_json: JSON.Obj): i32 { 
   Log("Storing data message in DB")
   // Get the device data
