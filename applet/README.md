@@ -1,4 +1,4 @@
-# applet
+# Creating a WASM applet for W3bstream
 This directory is structured to facilitate the development, testing and deployment of our secure air monitoring WebAssembly (WASM) applet which runs on the W3bstream platform.
 
 The source code in `assembly` directory implements the applet's functionality.
