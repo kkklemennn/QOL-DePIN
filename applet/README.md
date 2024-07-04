@@ -111,3 +111,12 @@ The Event Types that we'll route to the Handlers are:
 - DEVICE_ACTIVATE -> handle_device_activated
 - DEVICE_BINDING -> handle_device_binding
 - DEVICE_UNBINDING -> handle_device_unbinding
+
+## 5. Upload the WASM applet
+Compile the wasm applet by running the following command:
+
+`npm run asbuild`
+
+This will create the release.wasm file, which contains the logic behind the handlers that we're using.
+
+To upload this file to the W3bstream go to the project settings and click on "Update WASM" button. Select the compiled release.wasm and upload it.
