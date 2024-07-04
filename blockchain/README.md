@@ -21,41 +21,25 @@ Manages project dependencies and scripts for building, testing and deploying the
 ### package-lock.json
 Locks the versions of dependencies to ensure consistent builds.
 
-## HIW
-
 ## Relevant commands
 
 Run tests:
 
-```bash
-npm run test
-```
+`npm run test`
 
 Deploy smart contracts in hardhat envoronment:
 
-```bash
-npm run deploy
-```
+`npm run deploy`
 
 Deploy smart contracts to testnet:
 
-```bash
-npm run deploy:testnet
-```
+`npm run deploy:testnet`
 
 
 ## IMPORTANT INFO
 To be able to mint tokens, we need to:
-- grant w3bstream operator address the minter role
-- fund the operator address with some IOTX
+- Grant W3bstream operator address the minter role
+- Fund the operator address with some IOTX
 
 To be able to see them in the metamask wallet, we need to:
 - import the token contract to metamask
-
-## Event hashes:
-
-### DeviceRegistered(bytes32): 
-0x543b01d8fc03bd0f400fb055a7c379dc964b3c478f922bb2e198fa9bccb8e714
-
-### OwnershipAssigned(bytes32,address): 
-0x79e9049c280370b9eda34d20f57456b7dcc94e83ac839777f71209901f780f48

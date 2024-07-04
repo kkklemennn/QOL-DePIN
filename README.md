@@ -5,20 +5,23 @@ My Master's Thesis project is proposed optimal solution for integrating blockcha
 ## Directory overview
 
 ### applet
+The applet directory contains the essential components for generating a WebAssembly (WASM) applet that runs on the W3bstream platform. It includes configuration files, handler scripts for processing events, utility functions, and the compiled WASM binary. This setup allows the applet to manage device events, interact with smart contracts, and facilitate secure data handling and reward distribution on the W3bstream network.
 
 ### arduino
 The Arduino directory contains the comprehensive code for developing and deploying a secure air monitoring sensor. It includes individual functionality tests, utility scripts for tasks such as key generation and Wi-Fi scanning, and the integrated production code for the sensor. This setup enables the sensor to read data, manage connections, and securely communicate with W3bstream and HomeAssistant.
 
 ### blockchain
+The blockchain directory contains the code for the smart contract development and deployment for the project. It includes Solidity contracts, deployment scripts, testing frameworks, and configuration files. This setup ensures efficient contract management, from development and testing to deployment on the IoTeX network, enabling secure device registration, ownership management, and token operations.
 
 ### homeassistant
+The homeassistant directory contains custom integration code for connecting the secure air monitoring sensors to Home Assistant. It includes configuration files and scripts that enable seamless communication between the sensors and Home Assistant, allowing for real-time monitoring and interaction with the sensors within the Home Assistant ecosystem.
 
-### magbtc device manager
+### magbtc-device-manager-webapp
+The react-webapp directory contains the source code and configuration for a React-based web application. It includes frontend components, backend API server scripts, and configuration files. This setup allows users to manage IoT devices, including binding, unbinding, activation, and suspension. Additionally, it provides functionality for viewing the amount of rewarded tokens.
 
 ### pysim
-
-### w3bstream
+The pysim directory provides a Python-based simulation tool for testing the W3bstream integration. It includes scripts that generate random sensor data or use the hardcoded payload and send it to the W3bstream endpoint, facilitating the testing and validation of the W3bstream setup without needing physical devices.
 
 ## Workflow
 
-## Setup
+TODO

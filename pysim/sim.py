@@ -1,6 +1,4 @@
 import os
-from ecdsa import SigningKey, SECP256k1
-from ecdsa.util import sigencode_string
 import requests
 import json
 import time
@@ -15,73 +13,29 @@ PUB_TOKEN = os.getenv("PUB_TOKEN", "")
 PROJECT_NAME = os.getenv("PROJECT_NAME", "")
 EVENT_TYPE = os.getenv("EVENT_TYPE", "DEFAULT")
 W3BSTREAM_ENDPOINT = f"http://dev.w3bstream.com:8889/srv-applet-mgr/v0/event/{PROJECT_NAME}?eventType={EVENT_TYPE}"
-PRIVATE_KEY_FILE = "private.key"
-
-def generate_keys_ecdsa():
-    if not os.path.exists(PRIVATE_KEY_FILE):
-        # Generate a new private key using the SECP256k1 curve
-        sk = SigningKey.generate(curve=SECP256k1)
-        # Write the private key to a file in PEM format
-        with open(PRIVATE_KEY_FILE, "wb") as f:
-            f.write(sk.to_pem())
-    else:
-        # Load the existing private key from the file
-        with open(PRIVATE_KEY_FILE, "rb") as f:
-            sk = SigningKey.from_pem(f.read())
-
-    # Obtain the corresponding public key
-    vk = sk.get_verifying_key()
-
-    return sk, vk
-
-private_key, public_key = generate_keys_ecdsa()
-public_key_hex = "04" + public_key.to_string().hex()
-print(public_key_hex)
-
-def sign_data(private_key, data):
-    """
-    Sign the data using the provided ECDSA private key.
-
-    Args:
-        private_key (SigningKey): The ECDSA private key for signing.
-        data (str): The data payload to sign.
-
-    Returns:
-        bytes: The signature as a byte string.
-    """
-    # Ensure the data is in bytes
-    data_bytes = data.encode('utf-8')
-    # Sign the data
-    signature = private_key.sign(data_bytes, sigencode=sigencode_string)
-    return signature
 
 def send_data():
-    sensor_reading, timestamp = generate_sensor_data()
+    temperature, humidity, timestamp = generate_sensor_data()
     # Prepare data payload
     # data_payload = json.dumps({"sensor_reading": sensor_reading, "timestamp": timestamp})
     data_payload = {
-        "sensor_reading": sensor_reading,
+        "temperature": temperature,
+        "humidity": humidity,
         "timestamp": timestamp
     }
-    data_payload_str = json.dumps(data_payload)
-
-    signature = sign_data(private_key, data_payload_str)
-    device_id = public_key_hex[:20]  # First 20 characters of public key PEM
-
-    # Full payload with public key and signature
-    # payload = {
-    #     "data": data_payload,
-    #     "public_key": public_key_hex,
-    #     "deviceId": device_id,
-    #     "signature": signature.hex()  # Convert bytes to hex string for transport
-    # }
 
     # Hardcoded payload for testing purposes
     payload = {
-        "data": data_payload,
-        "public_key": "d06503012a2027f17f936eeb8c90b58f0b1f079ea12b215386c5f4e3836e95fa56d55a3cfdfcae63e4f8204d006bd135c867397b8366565bd3d5edd69840403aee",
-        "deviceId": "0xd06503012a2027f17f936eeb8c90b58f0b1f079ea12b215386c5f4e3836e95fa",
-        "signature": "3046022100e5f6fde12cef41320f29814b42e6977d800ea6485b604a839496c86c169f6a31022100940585ad283c6342fa84bcace645ab9531180af8e0dcb97de873e8746c259ab0"
+    "data": {
+        "temperature": "25.8",
+        "humidity": "48.0",
+        "timestamp": "1720047574",
+        "public_key": "cc6d788fc040dfa2987d69a8c2f78ac70e06b0b747003f8158db146104eb894f6b75aa1531e1b813148ebdf1e0db3af409c8b1d7eb8b1c6c23c6b61ef75e262b",
+        "latitude": "46.050030",
+        "longitude": "14.468389",
+        "accuracy": "9.0"
+    },
+    "signature": "0e11bcc3c81d9a1453cf994074e4bd8de69c8f878df1b0a4fb59688a7cba46fe75d9f76183713f20e95a2571c0f0690c0210e35148c14f7f62a5e0b9fb6627ae"
     }
 
     headers = {
@@ -101,8 +55,9 @@ def send_data():
         print(f"Failed to send data. Status code: {response.status_code}, Response: {response.text}")
 
 def generate_sensor_data():
-    sensor_reading = round(random.uniform(0, 100), 2)  # Generate a random float between 0 and 100
+    temperature = round(random.uniform(0, 100), 2)  # Generate a random float between 0 and 100
+    humidity = round(random.uniform(0, 100), 2)  # Generate a random float between 0 and 100
     timestamp = str(int(time.time() * 1000))  # Current Unix timestamp in milliseconds, converted to string
-    return sensor_reading, timestamp
+    return temperature, humidity, timestamp
 
 send_data()
