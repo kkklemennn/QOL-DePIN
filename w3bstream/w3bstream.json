@@ -51,7 +51,7 @@
 						"columns": [
 							{
 								"name": "lat",
-								"type": "float8",
+								"type": "float4",
 								"defaultValue": null,
 								"isIdentity": false,
 								"isNullable": true,
@@ -61,7 +61,7 @@
 							},
 							{
 								"name": "lon",
-								"type": "float8",
+								"type": "float4",
 								"defaultValue": null,
 								"isIdentity": false,
 								"isNullable": true,
@@ -71,7 +71,7 @@
 							},
 							{
 								"name": "accuracy",
-								"type": "float8",
+								"type": "float4",
 								"defaultValue": null,
 								"isIdentity": false,
 								"isNullable": true,
